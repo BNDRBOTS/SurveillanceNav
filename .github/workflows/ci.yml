@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  audit:
+    name: lint · typecheck · contrast · tests · build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: stn
+          POSTGRES_PASSWORD: stn_dev_password
+          POSTGRES_DB: stn_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U stn -d stn_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx eslint .
+      - run: npm run typecheck
+      - name: WCAG 2.2 contrast audit
+        run: node scripts/contrast-audit.mjs
+      - name: Server tests (integration, real PostGIS)
+        run: npm run test -w server
+      - name: Web tests (components, libs, axe a11y)
+        run: npm run test -w web
+      - run: npm run build
+      - name: Bundle budget (initial JS ≤ 200KB gzip, map vendor excluded)
+        run: |
+          cd web/dist/assets
+          total=0
+          for f in index-*.js vendor-*.js; do
+            sz=$(gzip -c "$f" | wc -c)
+            echo "$f → ${sz} bytes gzipped"
+            total=$((total + sz))
+          done
+          echo "initial JS total: ${total} bytes gzipped"
+          test "$total" -le 204800
+      - name: Boot smoke (migrate, seed, health, API)
+        env:
+          DATABASE_URL: postgres://stn:stn_dev_password@localhost:5432/stn_test
+          NODE_ENV: development
+          JOBS_ENABLED: 'false'
+          SEED_DEMO_USERS: 'true'
+        run: |
+          npm run migrate -w server
+          npm run seed -w server
+          node server/dist/index.js & SERVER_PID=$!
+          for i in $(seq 1 30); do curl -fsS localhost:4000/health/ready >/dev/null 2>&1 && break; sleep 1; done
+          curl -fsS localhost:4000/health/ready | grep -q '"status":"ok"'
+          curl -fsS "localhost:4000/api/v1/assets?pageSize=1" | grep -q '"items"'
+          curl -fsS localhost:4000/map | grep -qi '<!doctype html>'
+          kill $SERVER_PID
+
+  docker:
+    name: docker image builds
+    runs-on: ubuntu-latest
+    needs: audit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: stn:ci

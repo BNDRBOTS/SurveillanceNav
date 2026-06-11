@@ -1,0 +1,124 @@
+/**
+ * STN design tokens — "Void & Glow" system.
+ * Three structural neutrals (void, charcoal, graphite line) + bone text,
+ * with bright edge-glow functional colors. No blue tints anywhere.
+ *   void      #050505  — gloss deep black canvas
+ *   charcoal  #0E0F10 / #161718 — elevated surfaces
+ *   mint glow #00E5A8  — primary action / live edges
+ *   amber     #FFB347  — caution
+ *   signal    #FF4D4D  — danger
+ */
+:root {
+  /* color — structure */
+  --color-bg-primary: #050505;
+  --color-bg-secondary: #0E0F10;
+  --color-bg-tertiary: #161718;
+  --color-border: #26282B;
+  --color-border-strong: #62686F;
+  --color-bg-hover: #1D1F21;
+  --color-scrim: rgba(0, 0, 0, 0.72);
+
+  /* color — text */
+  --color-text-primary: #F4F4F2;
+  --color-text-secondary: #9BA0A6;
+
+  /* color — function (the glow set) */
+  --color-accent: #00E5A8;
+  --color-accent-strong: #00B88C;
+  --color-accent-ink: #03251B;
+  --color-danger: #FF4D4D;
+  --color-warning: #FFB347;
+  --color-success: #4ADE80;
+  --color-focus-ring: #00E5A8;
+
+  /* glow effects — function + style */
+  --glow-accent: 0 0 14px rgba(0, 229, 168, 0.32), 0 0 2px rgba(0, 229, 168, 0.55);
+  --glow-accent-soft: 0 0 10px rgba(0, 229, 168, 0.16);
+  --glow-danger: 0 0 12px rgba(255, 77, 77, 0.3);
+  --gloss-edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* typography */
+  --font-family: "Inter", "SF Pro", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --font-size-xs: 12px; --line-height-xs: 16px;
+  --font-size-sm: 14px; --line-height-sm: 20px;
+  --font-size-md: 16px; --line-height-md: 24px;
+  --font-size-lg: 20px; --line-height-lg: 28px;
+  --font-size-xl: 28px; --line-height-xl: 36px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* spacing & layout */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.55);
+  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.65);
+  --z-map: 0;
+  --z-overlay: 10;
+  --z-modal: 100;
+  --z-toast: 200;
+  --z-tooltip: 300;
+
+  /* motion */
+  --motion-duration-fast: 120ms;
+  --motion-duration-med: 200ms;
+  --motion-duration-slow: 360ms;
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* layout metrics */
+  --topbar-h: 56px;
+  --sidenav-w: 232px;
+  --touch-target: 44px;
+}
+
+/* High-contrast mode (user toggle and/or OS preference) */
+:root[data-contrast="high"] {
+  --color-bg-primary: #000;
+  --color-bg-secondary: #000;
+  --color-bg-tertiary: #0a0a0a;
+  --color-text-primary: #FFF;
+  --color-text-secondary: #e8e8e8;
+  --color-accent: #FFFF00;
+  --color-accent-strong: #e6e600;
+  --color-accent-ink: #000;
+  --color-border: #888;
+  --color-border-strong: #aaa;
+  --color-focus-ring: #FFFF00;
+  --color-bg-hover: #1c1c1c;
+  --glow-accent: none;
+  --glow-accent-soft: none;
+  --glow-danger: none;
+  --gloss-edge: none;
+}
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="normal"]) {
+    --color-border: #6b6f75;
+    --color-text-secondary: #d4d7da;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-fast: 0ms;
+    --motion-duration-med: 0ms;
+    --motion-duration-slow: 0ms;
+  }
+}
+:root[data-motion="reduced"] {
+  --motion-duration-fast: 0ms;
+  --motion-duration-med: 0ms;
+  --motion-duration-slow: 0ms;
+}

@@ -1,0 +1,33 @@
+{
+  "name": "surveillance-transparency-navigator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Surveillance Transparency Navigator (STN) — Lens of Light. Public-interest transparency & civic intelligence platform.",
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "shared",
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n server,web -c green,cyan \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build -w shared --if-present && npm run build -w server && npm run build -w web",
+    "start": "node server/dist/index.js",
+    "migrate": "npm run migrate -w server",
+    "seed": "npm run seed -w server",
+    "test": "npm run test -w shared --if-present && npm run test -w server && npm run test -w web",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w web",
+    "lint": "eslint .",
+    "audit:full": "node scripts/audit.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "typescript-eslint": "^8.20.0"
+  }
+}

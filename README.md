@@ -96,3 +96,22 @@ contrast | audit | compose` — see the Makefile. The API self-documents at **`/
 ## License
 
 AGPL-3.0 — transparency tooling should stay transparent.
+
+## Deploying on Railway (GitHub → Railway)
+
+1. **New Project → Deploy from GitHub repo** — Railway auto-detects the `Dockerfile`.
+2. **Add a PostgreSQL database** (Railway plugin). Railway injects `DATABASE_URL` automatically.
+   PostGIS isn't in Railway's default Postgres — that's fine: the app auto-detects and uses its
+   built-in lat/lng fallback. (Optional: deploy the `postgis/postgis:16-3.4` image as a service instead.)
+3. **Add Redis** (optional — the app runs without it; set `REDIS_URL` if you add it).
+4. **Set these variables** on the app service:
+   `NODE_ENV=production` · `COOKIE_SECURE=true` · `TRUST_PROXY=true` ·
+   `PUBLIC_URL=https://<your-app>.up.railway.app` ·
+   `JWT_SECRET` / `REFRESH_SECRET` / `DOWNLOAD_SECRET` (three different random strings —
+   generate each with `openssl rand -base64 48` or any password generator, 40+ chars).
+5. **Attach a Volume** mounted at `/data` and set `STORAGE_LOCAL_DIR=/data/storage`
+   (Railway's filesystem is wiped on redeploy — the volume keeps uploads, exports, and backups).
+   Or set `STORAGE_BACKEND=s3` with any S3/R2 credentials instead.
+6. Deploy. Migrations run automatically on boot. Health check path: `/health/ready`.
+7. Open the app and **sign up — the first account becomes admin** (you'll be walked through
+   authenticator-app setup). Don't seed demo users in production.

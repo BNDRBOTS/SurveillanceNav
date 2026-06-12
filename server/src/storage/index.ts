@@ -32,7 +32,14 @@ export function assertSafeKey(key: string): void {
 class LocalStorage implements StorageBackend {
   name = 'local';
   constructor(private root: string) {
-    fs.mkdirSync(root, { recursive: true });
+    try {
+      fs.mkdirSync(root, { recursive: true });
+    } catch (err) {
+      // Unwritable dir (e.g. read-only mount, perms): the API must still
+      // boot — uploads/exports will fail per-operation and /health/ready
+      // reports storage.ok=false until the path is fixed.
+      console.error(`storage: cannot create ${root}: ${(err as Error).message}`);
+    }
   }
   private resolve(key: string): string {
     assertSafeKey(key);

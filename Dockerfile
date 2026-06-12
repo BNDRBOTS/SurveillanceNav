@@ -25,9 +25,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends postgresql-clie
  && rm -rf /var/lib/apt/lists/* \
  && useradd --system --create-home --uid 10001 stn
 WORKDIR /app
+# package.json files ship in the runtime image so BOTH start styles work:
+#   node dist/index.js   (image default)
+#   npm start            (platform-injected start commands, e.g. Railway)
+# server/package.json also carries "type":"module" for the ESM bundle.
+COPY --from=build /app/package.json package.json
+COPY --from=build /app/server/package.json server/package.json
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/server/migrations server/migrations
 COPY --from=build /app/web/dist web/dist
+RUN mkdir -p /app/server/var/storage /app/server/var/mail && chown -R stn:stn /app/server/var
 USER stn
 WORKDIR /app/server
 ENV WEB_DIST_DIR=/app/web/dist

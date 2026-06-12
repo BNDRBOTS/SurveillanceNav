@@ -25,6 +25,8 @@ import { registerReferenceRoutes } from './routes/reference.js';
 import { registerExportRoutes } from './routes/exports.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerNavigationRoutes } from './routes/navigation.js';
+import { registerBillingRoutes } from './routes/billing.js';
 import { openapiDocument } from './openapi.js';
 import { API_PREFIX } from '@stn/shared';
 
@@ -71,6 +73,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       registerReferenceRoutes(api);
       registerExportRoutes(api);
       registerAdminRoutes(api);
+      registerNavigationRoutes(api);
+      registerBillingRoutes(api);
       registerHealthRoutes(api);
       api.get('/openapi.json', async () => openapiDocument);
     },

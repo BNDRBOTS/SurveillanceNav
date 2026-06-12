@@ -71,7 +71,7 @@ export function registerExportRoutes(app: FastifyInstance): void {
     return reply.status(202).send({
       id: row!.id,
       status: 'queued',
-      message: `Export started. Free tier caps at ${LIMITS.exportFreeRows.toLocaleString()} rows per file; larger exports are truncated with a warning.`,
+      message: `Export started. Free accounts cap at ${LIMITS.exportFreeRows.toLocaleString()} rows (Supporters: ${LIMITS.exportMaxRows.toLocaleString()}); oversized results are truncated with a warning.`,
     });
   });
 

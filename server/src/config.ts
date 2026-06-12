@@ -36,8 +36,27 @@ function devSecret(name: string): string {
   return secret;
 }
 
+const routingConfig = {
+  valhallaUrl: process.env.VALHALLA_URL ?? '',
+  orsApiKey: process.env.ORS_API_KEY ?? '',
+  osrmUrl: process.env.OSRM_URL ?? 'https://router.project-osrm.org',
+  nominatimUrl: process.env.NOMINATIM_URL ?? 'https://nominatim.openstreetmap.org',
+  nominatimEmail: process.env.NOMINATIM_EMAIL ?? '',
+};
+
+const stripeConfig = {
+  secretKey: process.env.STRIPE_SECRET_KEY ?? '',
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+  priceIdPro: process.env.STRIPE_PRICE_ID_PRO ?? '',
+  get configured(): boolean {
+    return Boolean(this.secretKey && this.priceIdPro);
+  },
+};
+
 export const config = {
   nodeEnv: NODE_ENV,
+  routing: routingConfig,
+  stripe: stripeConfig,
   isProd,
   isTest: NODE_ENV === 'test',
   host: env('HOST', '0.0.0.0'),

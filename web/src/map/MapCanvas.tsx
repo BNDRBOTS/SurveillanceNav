@@ -31,6 +31,15 @@ interface MapCanvasProps {
   onSelect: (assetId: string) => void;
   onMapClick?: (lngLat: { lng: number; lat: number }) => void;
   pickMode?: boolean;
+  /** Navigation overlay: route lines, endpoints, exposed cameras. */
+  route?: {
+    avoidant?: Array<[number, number]> | null;
+    fastest?: Array<[number, number]> | null;
+    origin?: { lng: number; lat: number } | null;
+    destination?: { lng: number; lat: number } | null;
+    exposed?: Array<{ id: string; lng: number; lat: number }>;
+    position?: { lng: number; lat: number } | null;
+  } | null;
 }
 
 interface LocateState {
@@ -54,6 +63,7 @@ export function MapCanvas({
   onSelect,
   onMapClick,
   pickMode,
+  route,
 }: MapCanvasProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -334,6 +344,98 @@ export function MapCanvas({
       map.off('zoomend', handler);
     };
   }, [data, layers.clustering, renderData]);
+
+  /* --------------------------- route overlay --------------------------- */
+  const routeMarkersRef = useRef<Marker[]>([]);
+  const lastFitRef = useRef<string>('');
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const ensureLayers = () => {
+      if (map.getSource('route')) return;
+      map.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('route-exposed', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const before = map.getLayer('asset-points') ? 'asset-points' : undefined;
+      map.addLayer({
+        id: 'route-fast', type: 'line', source: 'route',
+        filter: ['==', ['get', 'kind'], 'fastest'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#9BA0A6', 'line-width': 4, 'line-dasharray': [1.5, 2], 'line-opacity': 0.75 },
+      }, before);
+      map.addLayer({
+        id: 'route-avoid-casing', type: 'line', source: 'route',
+        filter: ['==', ['get', 'kind'], 'avoid'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#050505', 'line-width': 9, 'line-opacity': 0.85 },
+      }, before);
+      map.addLayer({
+        id: 'route-avoid', type: 'line', source: 'route',
+        filter: ['==', ['get', 'kind'], 'avoid'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#00E5A8', 'line-width': 4.5 },
+      }, before);
+      map.addLayer({
+        id: 'route-exposed-halo', type: 'circle', source: 'route-exposed',
+        paint: {
+          'circle-radius': 11, 'circle-color': 'rgba(255,77,77,0.22)',
+          'circle-stroke-color': '#FF4D4D', 'circle-stroke-width': 1.6,
+        },
+      });
+    };
+    ensureLayers();
+
+    const features: GeoJSON.Feature[] = [];
+    if (route?.fastest) {
+      features.push({ type: 'Feature', properties: { kind: 'fastest' }, geometry: { type: 'LineString', coordinates: route.fastest } });
+    }
+    if (route?.avoidant) {
+      features.push({ type: 'Feature', properties: { kind: 'avoid' }, geometry: { type: 'LineString', coordinates: route.avoidant } });
+    }
+    (map.getSource('route') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features } as never);
+    (map.getSource('route-exposed') as GeoJSONSource | undefined)?.setData({
+      type: 'FeatureCollection',
+      features: (route?.exposed ?? []).map((c) => ({
+        type: 'Feature', properties: { id: c.id }, geometry: { type: 'Point', coordinates: [c.lng, c.lat] },
+      })),
+    } as never);
+
+    for (const m of routeMarkersRef.current) m.remove();
+    routeMarkersRef.current = [];
+    const pin = (lng: number, lat: number, label: string, bg: string, ink: string) => {
+      const el = document.createElement('div');
+      el.style.cssText = `width:26px;height:26px;border-radius:50% 50% 50% 4px;transform:rotate(0deg);background:${bg};color:${ink};display:flex;align-items:center;justify-content:center;font:700 12px var(--font-family);border:2px solid #050505;box-shadow:var(--shadow-2);`;
+      el.textContent = label;
+      el.setAttribute('aria-label', label === 'A' ? 'Route start' : 'Route destination');
+      routeMarkersRef.current.push(new Marker({ element: el }).setLngLat([lng, lat]).addTo(map));
+    };
+    if (route?.origin) pin(route.origin.lng, route.origin.lat, 'A', '#F4F4F2', '#050505');
+    if (route?.destination) pin(route.destination.lng, route.destination.lat, 'B', '#00E5A8', '#03251B');
+    if (route?.position) {
+      const el = document.createElement('div');
+      el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#00E5A8;border:3px solid #050505;box-shadow:0 0 0 6px rgba(0,229,168,0.3), var(--glow-accent);';
+      el.setAttribute('aria-label', 'Your position');
+      routeMarkersRef.current.push(new Marker({ element: el }).setLngLat([route.position.lng, route.position.lat]).addTo(map));
+    }
+
+    // fit once per new route geometry
+    const line = route?.avoidant ?? route?.fastest;
+    if (line && line.length > 1) {
+      const key = `${line.length}:${line[0]![0]}:${line[line.length - 1]![1]}`;
+      if (key !== lastFitRef.current) {
+        lastFitRef.current = key;
+        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        for (const [lng, lat] of line) {
+          if (lng < minLng) minLng = lng;
+          if (lat < minLat) minLat = lat;
+          if (lng > maxLng) maxLng = lng;
+          if (lat > maxLat) maxLat = lat;
+        }
+        map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 72, maxZoom: 16, duration: 600 });
+      }
+    } else {
+      lastFitRef.current = '';
+    }
+  }, [route, ready, dataNonce]);
 
   /* ----------------------------- locate ----------------------------- */
   const handleLocate = () => {

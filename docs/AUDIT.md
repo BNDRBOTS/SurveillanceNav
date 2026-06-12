@@ -100,3 +100,32 @@ discard events.
 
 Security ✓ · Privacy/retention ✓ · Data integrity ✓ · Accessibility ✓ · Performance budgets ✓ ·
 Resilience ✓ · UX flows E2E ✓ — **fully-audited = PASS.**
+
+---
+
+# v1.1 ADDENDUM — Navigation + Stripe — STATUS: PASS (2026-06-12)
+
+New since v1.0: camera-aware A→B routing (engine chain Valhalla→ORS→OSRM with honest
+hard/best-effort labeling), geocoding proxy, in-app turn-by-turn (voice, camera-proximity alerts,
+off-route recompute, wake-lock), Google/Apple Maps handoff pinned through avoidance via-points,
+and fully wired Stripe (Checkout, portal, HMAC-verified idempotent webhooks, plan-gated export caps).
+
+| Gate | Result |
+| --- | --- |
+| TypeScript strict / ESLint / WCAG contrast | 0 errors / 0 errors / **57/57** |
+| Server tests (now incl. navigation geometry, engine-chain fallthrough with mocked engines, best-effort exposure selection, Valhalla hard-avoidance with real polyline6 codec, geocode cache+degradation, Stripe checkout/customer flow, webhook signature verify+replay-idempotency+plan flip, export cap wiring) | **88/88 pass** (was 75) |
+| Web tests | **17/17 pass** |
+| E2E smoke vs production bundle (now incl. billing status, OpenAPI nav contract, route-validation guards, geocode emptiness, engine-degradation envelope) | **34/34 pass** (was 29) |
+| Bundle budget (initial JS, map vendor excluded) | unchanged — nav code lives in the lazy map chunk |
+
+Verified live during this audit: PostgreSQL was killed mid-run — the API refused to start without
+its database (correct fail-fast), recovered on restart, and the full smoke passed end-to-end.
+External routing engines are unreachable from this CI container; the labeled 503 degradation path
+was therefore exercised live, while live-engine behavior (hard avoidance, alternative selection,
+exposure scoring) is proven by the mocked-engine integration tests above. Run
+`bash scripts/smoke.sh` on a network-open deployment to see the live-engine checks go green.
+
+Honest notes: OSRM public demo = best-effort avoidance only (clearly labeled in API+UI; configure
+ORS free key or Valhalla for guarantees); Google handoff approximates the avoidance route via ≤8
+pinned waypoints (stated in the UI); Stripe flows are mocked in tests — run one live test-mode
+checkout after setting keys.

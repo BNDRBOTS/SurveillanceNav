@@ -532,8 +532,10 @@ const generateExport: JobHandler = async (payload) => {
 
   await query(`UPDATE exports SET status = 'processing' WHERE id = $1`, [exportId]);
 
+  const owner = await queryOne<{ plan: string; role: string }>(`SELECT plan, role FROM users WHERE id = $1`, [job.user_id]);
+  const isPro = owner?.plan === 'pro' || owner?.role === 'admin';
   const params = job.params ?? {};
-  const cap = LIMITS.exportMaxRows;
+  const cap = isPro ? LIMITS.exportMaxRows : LIMITS.exportFreeRows;
   let rows: ExportRow[] = [];
   let columns: string[] = [];
 

@@ -115,3 +115,41 @@ AGPL-3.0 — transparency tooling should stay transparent.
 6. Deploy. Migrations run automatically on boot. Health check path: `/health/ready`.
 7. Open the app and **sign up — the first account becomes admin** (you'll be walked through
    authenticator-app setup). Don't seed demo users in production.
+
+## Navigation (v1.1) — camera-aware directions
+
+The map's **➤ Directions** button (floating button on phones) gives A→B routing that **avoids known
+cameras**: search any address (or tap the map / paste coordinates), and STN returns an avoidance
+route next to the fastest route with an honest comparison — *"avoids 14 of 16 cameras · +4 min"* —
+plus in-app turn-by-turn with voice guidance, camera-proximity alerts, off-route recalculation, and
+a screen wake-lock. One tap hands the route to **Google Maps or Apple Maps**, pinned through the
+avoidance via-points (no Google API key or billing account required).
+
+Routing engines (first configured wins; all proxied server-side):
+
+| Engine | Avoidance | Setup |
+| --- | --- | --- |
+| **Valhalla** (`VALHALLA_URL`) | guaranteed (hard exclusion) | self-host: `docker run -p 8002:8002 ghcr.io/valhalla/valhalla` with an OSM extract (see valhalla docs) |
+| **OpenRouteService** (`ORS_API_KEY`) | guaranteed (polygon avoidance) | free API key at openrouteservice.org — 2 minutes |
+| **OSRM** (`OSRM_URL`, default public demo) | best effort (lowest-exposure alternative, clearly labeled) | none — works out of the box for dev |
+
+Address search uses Nominatim (configurable/self-hostable). Every failure degrades cleanly:
+engines fall through the chain, geocoding outages suggest coordinate paste, and the UI never lies
+about whether avoidance was guaranteed or best-effort.
+
+## Stripe payments (v1.1) — Supporter plan
+
+Fully wired, zero extra dependencies, hidden until configured. The civic core (map, navigation,
+FOIA, disputes) stays free; Supporters raise export caps (10k → 50k rows) and fund the platform.
+
+Setup (≈5 minutes in the Stripe Dashboard):
+1. **Products → Add product** → name "STN Supporter", add a **recurring** price → copy the
+   `price_…` id → set `STRIPE_PRICE_ID_PRO`.
+2. **Developers → API keys** → copy the secret key → set `STRIPE_SECRET_KEY`.
+3. **Developers → Webhooks → Add endpoint** → URL `https://<your-domain>/api/v1/billing/webhook`,
+   events: `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted` → copy the signing secret → set `STRIPE_WEBHOOK_SECRET`.
+4. Redeploy. Settings now shows "Become a Supporter" → Stripe Checkout → webhook flips the plan
+   (signature-verified, idempotent) → "Manage billing" opens the Stripe customer portal.
+
+On **Railway** add those three variables in step 4 of the deployment guide above.

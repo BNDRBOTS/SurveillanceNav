@@ -35,6 +35,7 @@ interface DbUser {
   password_hash: string;
   mfa_enabled: boolean;
   mfa_secret: string | null;
+  plan: 'free' | 'pro';
   consent_flags: Record<string, boolean>;
   failed_login_attempts: number;
   locked_until: string | null;
@@ -50,6 +51,7 @@ function toPublic(u: DbUser): UserPublic {
     role: u.role,
     status: u.status as UserPublic['status'],
     mfaEnabled: u.mfa_enabled,
+    plan: u.plan,
     consentFlags: u.consent_flags ?? {},
     createdAt: u.created_at,
     lastLoginAt: u.last_login_at,

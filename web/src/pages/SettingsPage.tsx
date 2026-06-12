@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { get, patch, post, del, ApiError } from '@/lib/api';
@@ -6,6 +6,7 @@ import { applySession, logout } from '@/lib/auth';
 import { TextInput, PasswordInput } from '@/components/Form';
 import { ConfirmDialog } from '@/components/Modal';
 import { clearDatasets } from '@/lib/offline';
+import { useQuery } from '@tanstack/react-query';
 import type { AuthTokens, UserPublic } from '@stn/shared';
 
 export default function SettingsPage(): JSX.Element {
@@ -139,6 +140,8 @@ export default function SettingsPage(): JSX.Element {
           </button>
         </div>
 
+        <BillingCard isAdmin={user.role === 'admin'} />
+
         <AppearanceCard contrast={contrast} setContrast={setContrast} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} />
 
         <div className="card col">
@@ -239,6 +242,87 @@ function AppearanceCard({
           <span className="text-xs text-secondary">Disables animations and haptics (also honors your OS setting automatically)</span>
         </span>
       </label>
+    </div>
+  );
+}
+
+
+function BillingCard({ isAdmin }: { isAdmin: boolean }): JSX.Element | null {
+  const toast = useStore((s) => s.toast);
+  const [busy, setBusy] = useState(false);
+  const { data, refetch } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: () => get<{ configured: boolean; plan: string; hasBillingProfile?: boolean }>('/billing/status'),
+  });
+
+  // returning from Stripe Checkout: poll briefly while the webhook lands
+  const navigateBack = new URLSearchParams(window.location.search).get('billing');
+  useEffect(() => {
+    if (navigateBack === 'success') {
+      toast('Payment received — activating your Supporter plan…', 'success', 6000);
+      const t = setInterval(() => void refetch(), 2500);
+      const stop = setTimeout(() => clearInterval(t), 20_000);
+      return () => {
+        clearInterval(t);
+        clearTimeout(stop);
+      };
+    }
+    if (navigateBack === 'cancelled') toast('Checkout cancelled — no charge was made.', 'info');
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigateBack]);
+
+  if (!data) return null;
+  if (!data.configured) {
+    if (!isAdmin) return null; // nothing to show end users until keys exist
+    return (
+      <div className="card col">
+        <h2>Supporter plan (Stripe)</h2>
+        <p className="text-sm text-secondary">
+          Payments aren’t configured yet. Set <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_ID_PRO</code> and{' '}
+          <code>STRIPE_WEBHOOK_SECRET</code> — full steps are in the README. This card is only visible to admins.
+        </p>
+      </div>
+    );
+  }
+
+  const go = async (path: '/billing/checkout' | '/billing/portal') => {
+    setBusy(true);
+    try {
+      const res = await post<{ url: string }>(path);
+      window.location.href = res.url;
+    } catch (err) {
+      toast((err as ApiError).message, 'error', 7000);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card col">
+      <h2>Supporter plan</h2>
+      {data.plan === 'pro' ? (
+        <>
+          <p className="text-sm">
+            <span className="pill" data-tone="success">Supporter ✓</span>{' '}
+            <span className="text-secondary">Thank you — you fund the servers and the FOIA fee pool.</span>
+          </p>
+          <p className="text-xs text-secondary">Perks: export caps raised to 50,000 rows, priority processing.</p>
+          <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void go('/billing/portal')}>
+            {busy ? 'Opening…' : 'Manage billing'}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-secondary">
+            The map, navigation, FOIA tools and disputes are free for everyone — that’s the point. Supporters keep it
+            running and unlock bigger exports (50,000 rows vs 10,000).
+          </p>
+          <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void go('/billing/checkout')}>
+            {busy ? 'Opening secure checkout…' : 'Become a Supporter'}
+          </button>
+          <p className="text-xs text-secondary">Card handled entirely by Stripe — we never see your number. Cancel anytime.</p>
+        </>
+      )}
     </div>
   );
 }

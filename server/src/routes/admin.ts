@@ -19,6 +19,7 @@ import { metricsSnapshot } from '../plugins/metrics.js';
 import { recalcAssetConfidence } from '../services/confidence.js';
 import { enqueueJob, retryJob } from '../jobs/queue.js';
 import { runScheduledJobNow } from '../jobs/scheduler.js';
+import { activeEngine } from '../services/routing.js';
 import { config } from '../config.js';
 
 export function registerAdminRoutes(app: FastifyInstance): void {
@@ -188,6 +189,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
         lastDurationMs: s.last_duration_ms,
       })),
       storage: { backend: storage.name, ok: storageProbe.ok },
+      routing: activeEngine(),
       counts: counts ?? {},
     };
     return result;

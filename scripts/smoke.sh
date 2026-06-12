@@ -95,6 +95,23 @@ R2=$(curl -fsS -X POST "$BASE/api/v1/assets" -H "$AUTH" -H "Idempotency-Key: $IK
 [ "$(echo "$R1" | grep -o '"id":"[^"]*"' | head -1)" = "$(echo "$R2" | grep -o '"id":"[^"]*"' | head -1)" ] \
   && ok "idempotent replay returns same record" || bad "idempotency"
 
+
+# --- v1.1: navigation & billing -------------------------------------------
+check "billing status (unconfigured-safe)" "$J $BASE/api/v1/billing/status | grep -q configured"
+check "openapi documents navigation"       "$J $BASE/api/v1/openapi.json | grep -q navigation/route"
+NAVRES=$(curl -s -w '\n%{http_code}' -X POST "$BASE/api/v1/navigation/route" -H 'content-type: application/json' \
+  -d '{"origin":{"lng":-122.4194,"lat":37.7749},"destination":{"lng":-122.2712,"lat":37.8044},"avoid":{"enabled":true}}')
+NAVCODE=$(echo "$NAVRES" | tail -1)
+if [ "$NAVCODE" = "200" ]; then
+  echo "$NAVRES" | head -1 | grep -q '"fastest"' && ok "navigation route computed (engine live)" || bad "navigation route shape"
+elif [ "$NAVCODE" = "503" ]; then
+  echo "$NAVRES" | head -1 | grep -q 'service_unavailable' && ok "navigation degrades cleanly (engines unreachable here)" || bad "navigation 503 envelope"
+else
+  bad "navigation route (HTTP $NAVCODE)"
+fi
+check "same-point route rejected (400)"    "curl -s -o /dev/null -w '%{http_code}' -X POST $BASE/api/v1/navigation/route -H 'content-type: application/json' -d '{\"origin\":{\"lng\":-100,\"lat\":40},\"destination\":{\"lng\":-100,\"lat\":40}}' | grep -q 400"
+check "geo search short query → empty"     "$J '$BASE/api/v1/geo/search?q=ab' | grep -q '\"items\":\\[\\]'"
+
 echo
 echo "SMOKE RESULT: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

@@ -41,6 +41,7 @@ export interface UserPublic {
   role: GlobalRole;
   status: 'active' | 'invited' | 'suspended' | 'deleted';
   mfaEnabled: boolean;
+  plan?: 'free' | 'pro';
   consentFlags: Record<string, boolean>;
   createdAt: string;
   lastLoginAt: string | null;
@@ -319,6 +320,7 @@ export interface AdminMetrics {
     lastDurationMs: number | null;
   }>;
   storage: { backend: string; ok: boolean };
+  routing?: { name: string; hardAvoidance: boolean };
   counts: Record<string, number>;
 }
 

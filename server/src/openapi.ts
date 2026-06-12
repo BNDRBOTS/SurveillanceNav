@@ -198,6 +198,14 @@ export const openapiDocument = {
     },
     '/admin/rate-limit-override': { post: op('Temporary audited rate-limit bypass (incident lever)', { body: true, tag: 'admin' }) },
 
+    '/geo/search': { get: op('Address/place search (server-proxied geocoding, cached)', { auth: false, tag: 'navigation' }) },
+    '/geo/reverse': { get: op('Reverse geocode a coordinate', { auth: false, tag: 'navigation' }) },
+    '/navigation/route': { post: op('Camera-aware routing: avoidant + fastest routes with exposure scoring (engine chain: Valhalla → ORS → OSRM best-effort)', { auth: false, body: true, tag: 'navigation' }) },
+    '/billing/status': { get: op('Billing configuration + current plan', { auth: false, tag: 'billing' }) },
+    '/billing/checkout': { post: op('Start Stripe Checkout (subscription)', { tag: 'billing' }) },
+    '/billing/portal': { post: op('Open Stripe customer portal', { tag: 'billing' }) },
+    '/billing/webhook': { post: op('Stripe webhook (signature-verified, idempotent)', { auth: false, body: true, tag: 'billing' }) },
+
     '/health/live': { get: op('Liveness', { auth: false, tag: 'health' }) },
     '/health/ready': { get: op('Readiness: DB/cache/storage checks', { auth: false, tag: 'health' }) },
   },

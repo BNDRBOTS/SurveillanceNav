@@ -21,6 +21,8 @@ import { useStore } from '@/lib/store';
 import { Modal } from '@/components/Modal';
 import { TextInput, Select } from '@/components/Form';
 import { haptics } from '@/lib/haptics';
+import { NavigatePanel, type NavEndpoint } from '@/map/NavigatePanel';
+import { useNavigation } from '@/map/useNavigation';
 
 const DEFAULT_CAMERA = { lng: -96.9, lat: 38.5, zoom: 4 };
 
@@ -61,6 +63,59 @@ export default function MapPage(): JSX.Element {
   const [addLocation, setAddLocation] = useState<{ lng: number; lat: number } | null>(null);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(params.get('nav') === '1');
+  const [navOrigin, setNavOrigin] = useState<NavEndpoint | null>(null);
+  const [navDestination, setNavDestination] = useState<NavEndpoint | null>(null);
+  const [navMode, setNavMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
+  const [avoidEnabled, setAvoidEnabled] = useState(true);
+  const [navPick, setNavPick] = useState<'origin' | 'destination' | null>(null);
+
+  const navOriginRef = { current: navOrigin };
+  navOriginRef.current = navOrigin;
+  const navDestRef = { current: navDestination };
+  navDestRef.current = navDestination;
+  const navModeRef = { current: navMode };
+  navModeRef.current = navMode;
+  const avoidRef = { current: avoidEnabled };
+  avoidRef.current = avoidEnabled;
+
+  const nav = useNavigation({
+    onRecompute: async (from) => {
+      if (!navDestRef.current) return;
+      const fresh = { label: 'My location', ...from };
+      setNavOrigin(fresh);
+      await nav.compute(from, navDestRef.current, navModeRef.current, {
+        enabled: avoidRef.current,
+        minConfidence: 30,
+        bufferMeters: navModeRef.current === 'driving' ? 120 : 60,
+      });
+      nav.start();
+    },
+  });
+
+  const goRoute = async () => {
+    if (!navOrigin || !navDestination) return;
+    haptics.light();
+    await nav.compute(
+      { lng: navOrigin.lng, lat: navOrigin.lat },
+      { lng: navDestination.lng, lat: navDestination.lat },
+      navMode,
+      { enabled: avoidEnabled, minConfidence: 30, bufferMeters: navMode === 'driving' ? 120 : 60 },
+    );
+  };
+
+  const navRouteProp = nav.state.result
+    ? {
+        avoidant: nav.state.active === nav.state.result.avoidant ? nav.state.result.avoidant?.geometry : nav.state.active?.geometry,
+        fastest: nav.state.result.fastest.geometry,
+        origin: navOrigin,
+        destination: navDestination,
+        exposed: nav.state.active?.exposure.cameras ?? [],
+        position: nav.state.position,
+      }
+    : navOrigin || navDestination
+      ? { origin: navOrigin, destination: navDestination }
+      : null;
 
   const { data, loading, error, stale, truncated, refetch } = useMapAssets(bbox, camera.zoom, filters);
 
@@ -135,16 +190,44 @@ export default function MapPage(): JSX.Element {
         onViewChange={onViewChange}
         onSelect={(id) => setSelectedAsset(id)}
         onMapClick={(lngLat) => {
+          if (navPick) {
+            const endpoint = { label: `${lngLat.lat.toFixed(5)}, ${lngLat.lng.toFixed(5)}`, ...lngLat };
+            if (navPick === 'origin') setNavOrigin(endpoint);
+            else setNavDestination(endpoint);
+            setNavPick(null);
+            setNavOpen(true);
+            void get<{ label: string }>(`/geo/reverse?lng=${lngLat.lng}&lat=${lngLat.lat}`)
+              .then((r) => {
+                const named = { label: r.label.split(',').slice(0, 3).join(','), ...lngLat };
+                if (navPick === 'origin') setNavOrigin(named);
+                else setNavDestination(named);
+              })
+              .catch(() => undefined);
+            return;
+          }
           if (addMode) {
             setAddLocation(lngLat);
             setAddMode(false);
           }
         }}
-        pickMode={addMode}
+        pickMode={addMode || navPick !== null}
+        route={navRouteProp}
       />
 
       <div className="map-topleft">
-        <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>
+        <button
+          type="button"
+          className={`btn btn-sm ${navOpen ? 'btn-primary' : ''}`}
+          style={{ boxShadow: 'var(--shadow-2)' }}
+          aria-expanded={navOpen}
+          onClick={() => {
+            setNavOpen((o) => !o);
+            setFiltersOpen(false);
+          }}
+        >
+          ➤ Directions
+        </button>
+        <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
           ☰ Filters{filters.technologyType.length + filters.status.length > 0 ? ` (${filters.technologyType.length + filters.status.length})` : ''}
         </button>
         <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setLayersOpen(true)}>
@@ -208,6 +291,41 @@ export default function MapPage(): JSX.Element {
 
       {filtersOpen ? (
         <FilterSheet filters={filters} onChange={setFilters} onClose={() => setFiltersOpen(false)} resultCount={resultCount} loading={loading} />
+      ) : null}
+
+      {navOpen || nav.state.phase === 'navigating' ? (
+        <NavigatePanel
+          nav={nav.state}
+          origin={navOrigin}
+          destination={navDestination}
+          setOrigin={setNavOrigin}
+          setDestination={setNavDestination}
+          mode={navMode}
+          setMode={setNavMode}
+          avoidEnabled={avoidEnabled}
+          setAvoidEnabled={setAvoidEnabled}
+          onGo={() => void goRoute()}
+          onClose={() => {
+            setNavOpen(false);
+            nav.reset();
+            setNavOrigin(null);
+            setNavDestination(null);
+          }}
+          onPick={(which) => {
+            setNavPick(which);
+            toast(`Tap the map to set the ${which === 'origin' ? 'starting point' : 'destination'}.`, 'info', 4000);
+          }}
+          onUseRoute={nav.useRoute}
+          onStart={nav.start}
+          onStop={() => nav.stop()}
+          onVoice={nav.setVoice}
+        />
+      ) : null}
+
+      {!navOpen && nav.state.phase !== 'navigating' ? (
+        <button type="button" className="nav-fab" aria-label="Get directions" onClick={() => setNavOpen(true)}>
+          ➤
+        </button>
       ) : null}
 
       {layersOpen ? (

@@ -503,3 +503,46 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 @media (max-width: 840px) {
   .hide-mobile { display: none !important; }
 }
+
+/* ---------------- navigation (Directions + live HUD) ---------------- */
+.nav-fab {
+  display: none;
+  position: absolute; z-index: var(--z-overlay);
+  right: var(--space-sm); bottom: calc(168px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; border-radius: var(--radius-full);
+  background: var(--color-accent); color: var(--color-accent-ink);
+  border: none; font-size: 22px; cursor: pointer;
+  box-shadow: var(--shadow-3), var(--glow-accent);
+  transition: transform var(--motion-duration-fast) var(--motion-ease);
+}
+.nav-fab:active { transform: scale(0.94); }
+@media (max-width: 840px) { .nav-fab { display: flex; align-items: center; justify-content: center; } }
+
+.navhud {
+  position: absolute; z-index: var(--z-overlay);
+  top: var(--space-sm); left: var(--space-sm); right: var(--space-sm);
+  display: flex; flex-direction: column; gap: var(--space-xs);
+  pointer-events: none;
+}
+.navhud > * { pointer-events: auto; }
+.navhud-card {
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(5, 5, 5, 0.92); backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border); border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-lg); padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-3), var(--glow-accent-soft);
+  font-size: var(--font-size-lg); line-height: var(--line-height-lg);
+  color: var(--color-text-primary);
+}
+.navhud-bottom {
+  display: flex; align-items: center; gap: var(--space-sm);
+  background: rgba(5, 5, 5, 0.92); backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  padding: var(--space-xs) var(--space-md);
+  box-shadow: var(--shadow-2);
+  color: var(--color-text-primary);
+}
+@media (max-width: 840px) {
+  .navhud { top: var(--space-xs); }
+  .navhud-bottom { position: fixed; left: var(--space-sm); right: var(--space-sm); bottom: calc(72px + env(safe-area-inset-bottom)); }
+}

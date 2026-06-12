@@ -14,6 +14,7 @@ interface DbUserRow {
   role: UserPublic['role'];
   status: UserPublic['status'];
   mfa_enabled: boolean;
+  plan: 'free' | 'pro';
   consent_flags: Record<string, boolean>;
   created_at: string;
   last_login_at: string | null;
@@ -27,6 +28,7 @@ const toPublic = (u: DbUserRow): UserPublic => ({
   role: u.role,
   status: u.status,
   mfaEnabled: u.mfa_enabled,
+  plan: u.plan,
   consentFlags: u.consent_flags ?? {},
   createdAt: u.created_at,
   lastLoginAt: u.last_login_at,

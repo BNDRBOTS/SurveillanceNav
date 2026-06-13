@@ -20,8 +20,9 @@ RUN node scripts/gen-icons.mjs \
 
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
-# postgresql-client provides pg_dump/pg_restore for the backup-verify job
-RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client ca-certificates \
+# postgresql-client provides pg_dump/pg_restore for the backup-verify job;
+# gosu drops root→stn in the entrypoint after fixing volume ownership.
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client ca-certificates gosu \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --system --create-home --uid 10001 stn
 WORKDIR /app
@@ -34,11 +35,15 @@ COPY --from=build /app/server/package.json server/package.json
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/server/migrations server/migrations
 COPY --from=build /app/web/dist web/dist
-RUN mkdir -p /app/server/var/storage /app/server/var/mail && chown -R stn:stn /app/server/var
-USER stn
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh \
+ && mkdir -p /app/server/var/storage /app/server/var/mail && chown -R stn:stn /app/server/var
+# NOTE: container starts as root so the entrypoint can chown a root-owned mounted
+# volume (e.g. Railway volumes), then drops to `stn` via gosu before running node.
 WORKDIR /app/server
 ENV WEB_DIST_DIR=/app/web/dist
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:4000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:'+(process.env.PORT||4000)+'/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

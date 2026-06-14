@@ -332,7 +332,17 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .filtersheet-body { flex: 1; overflow-y: auto; padding: var(--space-sm) var(--space-md); }
 .filtersheet-footer { display: flex; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--color-border); }
 @media (max-width: 840px) {
-  .filtersheet { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 72dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; animation: sheet-in var(--motion-duration-med) var(--motion-ease); }
+  .filtersheet {
+    top: auto; left: 0; right: 0; width: auto;
+    /* Clear the fixed .bottomnav tab bar (matches .map-legend / .navhud-bottom /
+       .toasts) so the sheet's action buttons — e.g. "Get route" — aren't hidden
+       behind it and become untappable on mobile Safari. */
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    max-height: 72vh; /* fallback for iOS Safari < 15.4 (no dynamic viewport unit) */
+    max-height: 72dvh;
+    border-radius: var(--radius-lg);
+    animation: sheet-in var(--motion-duration-med) var(--motion-ease);
+  }
 }
 
 /* chips */

@@ -7,6 +7,7 @@ import { useStore } from '@/lib/store';
 import { logout } from '@/lib/auth';
 import { fmtRelative } from '@/lib/format';
 import { haptics } from '@/lib/haptics';
+import { Icon } from './Icon';
 
 function useClickOutside(onAway: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -63,7 +64,7 @@ function NotificationsBell(): JSX.Element {
           setOpen((o) => !o);
         }}
       >
-        <span aria-hidden="true">🔔</span>
+        <Icon name="bell" size={20} />
         {unread > 0 ? (
           <span
             className="pill"
@@ -131,7 +132,7 @@ function WorkspaceSwitcher(): JSX.Element | null {
   return (
     <div style={{ position: 'relative' }} ref={ref} className="hide-mobile">
       <button type="button" className="btn btn-ghost btn-sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span className="text-secondary text-xs">Workspace</span> {current.name.length > 18 ? `${current.name.slice(0, 17)}…` : current.name} ▾
+        <span className="text-secondary text-xs">Workspace</span> {current.name.length > 18 ? `${current.name.slice(0, 17)}…` : current.name} <Icon name="chevron-down" size={14} />
       </button>
       {open ? (
         <div className="menu" style={{ top: 'calc(100% + 6px)', left: 0 }} role="menu" aria-label="Switch workspace">
@@ -144,7 +145,7 @@ function WorkspaceSwitcher(): JSX.Element | null {
                 setOpen(false);
               }}
             >
-              {w.id === current.id ? '✓ ' : ''}
+              {w.id === current.id ? <Icon name="check" size={14} /> : null}
               {w.name}
             </button>
           ))}
@@ -155,7 +156,7 @@ function WorkspaceSwitcher(): JSX.Element | null {
               navigate('/workspaces');
             }}
           >
-            ＋ Manage workspaces…
+            <Icon name="plus" size={14} /> Manage workspaces…
           </button>
         </div>
       ) : null}
@@ -219,7 +220,7 @@ export function TopBar(): JSX.Element {
       {user ? (
         <>
           <Link to="/foia/new" className="btn btn-primary btn-sm hide-mobile">
-            ＋ New FOIA
+            <Icon name="plus" size={16} /> New FOIA
           </Link>
           <WorkspaceSwitcher />
           <NotificationsBell />

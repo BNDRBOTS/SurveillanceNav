@@ -3,7 +3,7 @@
 A production-grade, public-interest platform for mapping, understanding, and **acting on** surveillance
 infrastructure: cameras, license plate readers, drones, gunshot detection, facial recognition deployments —
 with verified provenance, FOIA workflows that cite the correct statute, procurement intelligence, policy
-timelines, governed exports, and a fully audited operations console.
+timelines, governed exports, and an operations console with full audit logging.
 
 Built for journalists, researchers, civic organizations, municipalities, auditors, and citizens.
 
@@ -36,7 +36,7 @@ login — MFA is enforced for administrators. The **first signup on an empty dat
 
 | Area | Highlights |
 | --- | --- |
-| **Map** | MapLibre GL with bundled offline vector basemap (zero tile dependency), optional OSM/Esri raster, Supercluster + server-side grid clustering at low zoom (smooth at 100k+ points), heatmap, per-technology layers, radius analysis with real distances, jurisdiction comparison, shareable URL state & saved views with share tokens, click-to-add submissions |
+| **Map** | MapLibre GL with bundled offline vector basemap (zero tile dependency), optional OSM/Esri raster, Supercluster + server-side grid clustering at low zoom (scales to 100k+ points), heatmap, per-technology layers, radius analysis with real distances, jurisdiction comparison, shareable URL state & saved views with share tokens, click-to-add submissions |
 | **Trust engine** | Source registry with verification states, explainable 0–100 confidence scores (tap any score for the factor breakdown), immutable diffed change history, evidence uploads (malware + PII scanned, quarantine queue), disputes with mandatory admin resolution, automatic duplicate detection → merge workflow |
 | **FOIA** | Template library + composer that cites the governing public-records statute for all 50 states + DC + federal, computes the statutory response deadline when marked sent, deadline reminders (in-app + email), document repository with redaction annotations, outcome tagging |
 | **Procurement** | Paste text or upload contract/RFP PDFs → async extraction of vendor, amounts, dates, technology terms with per-field evidence and confidence; human review queue; admin-gated publication |
@@ -91,7 +91,7 @@ contrast | audit | compose` — see the Makefile. The API self-documents at **`/
 - [docs/SECURITY.md](docs/SECURITY.md) — threat model & controls
 - [docs/PRIVACY.md](docs/PRIVACY.md) — data practices (also rendered in-app at `/privacy`)
 - [docs/RUNBOOKS.md](docs/RUNBOOKS.md) — incident response & operations
-- [docs/AUDIT.md](docs/AUDIT.md) — **full audit report with verified results**
+- [docs/AUDIT.md](docs/AUDIT.md) — **internal audit report with verified results**
 
 ## License
 

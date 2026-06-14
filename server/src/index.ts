@@ -6,6 +6,7 @@ import { closePool, pool } from './db/pool.js';
 import { cache } from './cache/index.js';
 import { startScheduler, stopScheduler } from './jobs/scheduler.js';
 import { startQueueWorkers, stopQueueWorkers } from './jobs/queue.js';
+import { seedDeflockMetros } from './services/overpass.js';
 
 async function main(): Promise<void> {
   // Apply migrations on boot (idempotent; disable with AUTO_MIGRATE=false).
@@ -49,6 +50,13 @@ async function main(): Promise<void> {
   const app = await buildApp();
   await startScheduler();
   startQueueWorkers();
+
+  // Proactively populate the map with real De-Flock data for major metros so it
+  // isn't empty out of the box; the viewport trigger covers everywhere else as
+  // people browse. Best-effort and non-blocking — workers import in background.
+  if ((process.env.DEFLOCK_ENABLED ?? 'true') !== 'false') {
+    void seedDeflockMetros().catch(() => undefined);
+  }
 
   await app.listen({ host: config.host, port: config.port });
   app.log.info(`STN server ready on ${config.publicUrl} (env=${config.nodeEnv}, storage=${config.storageBackend})`);

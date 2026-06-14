@@ -232,3 +232,37 @@ export async function runImportRegion(bbox: Bbox, tile?: string): Promise<Import
     client.release();
   }
 }
+
+/* ---------------- proactive coverage: populate major metros ---------------- */
+
+// Metro centers to proactively import so the map is populated with real De-Flock
+// data out of the box; the viewport trigger covers everywhere else as browsed.
+const METROS: ReadonlyArray<readonly [number, number]> = [
+  [-122.4194, 37.7749], [-118.2437, 34.0522], [-117.1611, 32.7157], [-121.4944, 38.5816],
+  [-122.3321, 47.6062], [-122.6765, 45.5231], [-112.074, 33.4484], [-115.1398, 36.1699],
+  [-104.9903, 39.7392], [-96.797, 32.7767], [-95.3698, 29.7604], [-97.7431, 30.2672],
+  [-98.4936, 29.4241], [-87.6298, 41.8781], [-93.265, 44.9778], [-83.0458, 42.3314],
+  [-84.388, 33.749], [-80.1918, 25.7617], [-82.4572, 27.9506], [-80.8431, 35.2271],
+  [-73.9857, 40.7484], [-75.1652, 39.9526], [-71.0589, 42.3601], [-77.0369, 38.9072],
+  [-76.6122, 39.2904],
+];
+const METRO_RADIUS_DEG = 0.22;
+
+/**
+ * Proactively populate (and, on later boots past the cooldown, refresh) De-Flock
+ * data for major metros so the map is never empty. Reuses the cooldown-guarded
+ * viewport importer, so repeated boots never hammer Overpass. Best-effort.
+ */
+export async function seedDeflockMetros(): Promise<void> {
+  for (const [lng, lat] of METROS) {
+    await maybeEnqueueImport(
+      {
+        minLng: lng - METRO_RADIUS_DEG,
+        minLat: lat - METRO_RADIUS_DEG,
+        maxLng: lng + METRO_RADIUS_DEG,
+        maxLat: lat + METRO_RADIUS_DEG,
+      },
+      MIN_ZOOM,
+    );
+  }
+}

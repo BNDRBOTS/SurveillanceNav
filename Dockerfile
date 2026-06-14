@@ -20,9 +20,17 @@ RUN node scripts/gen-icons.mjs \
 
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
-# postgresql-client provides pg_dump/pg_restore for the backup-verify job;
-# gosu drops root→stn in the entrypoint after fixing volume ownership.
-RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client ca-certificates gosu \
+# pg_dump/pg_restore for the backup-verify job must match the database server's
+# major version (Postgres 18). Debian's default client is 15 and refuses to dump
+# an 18 server, so install postgresql-client-18 from the official PostgreSQL apt
+# repo. gosu drops root→stn in the entrypoint after fixing volume ownership.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl gosu \
+ && install -d /usr/share/postgresql-common/pgdg \
+ && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+ && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client-18 \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --system --create-home --uid 10001 stn
 WORKDIR /app

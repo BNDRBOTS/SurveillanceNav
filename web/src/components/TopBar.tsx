@@ -251,6 +251,9 @@ export function TopBar(): JSX.Element {
                 <Link to="/privacy" onClick={() => setMenuOpen(false)}>
                   Data we collect
                 </Link>
+                <Link to="/terms" onClick={() => setMenuOpen(false)}>
+                  Terms of use
+                </Link>
                 <button
                   type="button"
                   onClick={async () => {

@@ -149,6 +149,21 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
           <div className="drawer-body col">
             {tab === 'overview' ? (
               <>
+                {asset.properties?.imported ? (
+                  <div className="banner" data-tone="info" style={{ borderRadius: 'var(--radius-md)', flexWrap: 'wrap' }}>
+                    <Icon name="map-pin" size={16} />
+                    <span className="text-sm" style={{ flex: 1, minWidth: 180 }}>
+                      Imported from <strong>De-Flock / OpenStreetMap</strong> — community-mapped,{' '}
+                      <strong>unverified</strong>, and may be inaccurate or out of date. Data © OpenStreetMap
+                      contributors (ODbL).
+                    </span>
+                    {user ? (
+                      <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFlagOpen(true)}>
+                        <Icon name="flag" size={14} /> Report
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
                 <dl className="kv">
                   <dt>Technology</dt>
                   <dd>{TECHNOLOGY_LABELS[asset.technologyType]}</dd>
@@ -177,14 +192,14 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
                   </dd>
                 </dl>
 
-                {Object.keys(asset.properties ?? {}).filter((k) => k !== 'seeded').length > 0 ? (
+                {Object.keys(asset.properties ?? {}).filter((k) => !['seeded', 'imported', 'importedFrom', 'osmId', 'osmTags'].includes(k)).length > 0 ? (
                   <details>
                     <summary className="text-sm text-secondary" style={{ cursor: 'pointer' }}>
                       Additional properties
                     </summary>
                     <dl className="kv" style={{ marginTop: 'var(--space-xs)' }}>
                       {Object.entries(asset.properties)
-                        .filter(([k]) => k !== 'seeded')
+                        .filter(([k]) => !['seeded', 'imported', 'importedFrom', 'osmId', 'osmTags'].includes(k))
                         .map(([k, v]) => (
                           <span key={k} style={{ display: 'contents' }}>
                             <dt>{k}</dt>

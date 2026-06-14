@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import pg from 'pg';
 import { config } from '../src/config.js';
-import { mapTechnology, parseOverpassNodes, ensureOsmSource, importOsmNodes } from '../src/services/overpass.js';
+import { mapTechnology, parseOverpassNodes, ensureOsmSource, importOsmNodes, maybeEnqueueImport } from '../src/services/overpass.js';
 
 const SAMPLE = {
   elements: [
@@ -58,6 +58,31 @@ describe('deflock / overpass importer', () => {
       expect(asset.rows[0]!.confidence_score).toBeLessThan(60);
     } finally {
       await client.query(`DELETE FROM surveillance_assets WHERE external_ref LIKE 'osm:node/%'`).catch(() => undefined);
+      await client.end();
+    }
+  });
+
+  it('viewport trigger enqueues one import per tile, throttled by cooldown and zoom', async () => {
+    const client = new pg.Client({ connectionString: config.databaseUrl });
+    await client.connect();
+    const bbox = { minLng: -122.45, minLat: 37.75, maxLng: -122.4, maxLat: 37.8 };
+    const countJobs = async () =>
+      (await client.query<{ n: number }>(`SELECT count(*)::int AS n FROM jobs WHERE type = 'import_region'`)).rows[0]!.n;
+    try {
+      await client.query(`DELETE FROM jobs WHERE type = 'import_region'`);
+      await client.query(`DELETE FROM import_tiles`);
+
+      await maybeEnqueueImport(bbox, 13);
+      expect(await countJobs()).toBe(1); // first view of the tile → one import enqueued
+
+      await maybeEnqueueImport(bbox, 13);
+      expect(await countJobs()).toBe(1); // same tile within cooldown → throttled, no new job
+
+      await maybeEnqueueImport(bbox, 5);
+      expect(await countJobs()).toBe(1); // too zoomed out → skipped
+    } finally {
+      await client.query(`DELETE FROM jobs WHERE type = 'import_region'`).catch(() => undefined);
+      await client.query(`DELETE FROM import_tiles`).catch(() => undefined);
       await client.end();
     }
   });

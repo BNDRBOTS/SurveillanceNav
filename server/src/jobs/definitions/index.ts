@@ -11,6 +11,7 @@ import { PdfBuilder } from '../../lib/pdf.js';
 import { audit } from '../../services/audit.js';
 import { TECH_COLORS, LIMITS, type TechnologyType } from '@stn/shared';
 import type { JobHandler } from '../queue.js';
+import { runImportRegion, type Bbox } from '../../services/overpass.js';
 
 export const scheduleDefaults: Array<{ name: string; description: string; intervalSec: number }> = [
   { name: 'integrity_check', description: 'Detect duplicate assets, orphaned evidence, and records missing jurisdictions; queue for curator review.', intervalSec: 21_600 },
@@ -729,7 +730,15 @@ const generateExport: JobHandler = async (payload) => {
   return { rows: rows.length, truncated, key };
 };
 
+const importRegionJob: JobHandler = async (payload) => {
+  const bbox = payload.bbox as Bbox | undefined;
+  const tile = typeof payload.tile === 'string' ? payload.tile : undefined;
+  if (!bbox || typeof bbox.minLng !== 'number') return { skipped: 'invalid bbox' };
+  return { ...(await runImportRegion(bbox, tile)) };
+};
+
 export const jobDefinitions: Record<string, JobHandler> = {
+  import_region: importRegionJob,
   integrity_check: integrityCheck,
   retention_enforcement: retentionEnforcement,
   cache_warmup: cacheWarmup,

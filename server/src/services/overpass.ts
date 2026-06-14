@@ -1,5 +1,7 @@
 import pg from 'pg';
 import { computeConfidence, type TechnologyType } from '@stn/shared';
+import { pool, queryOne } from '../db/pool.js';
+import { enqueueJob } from '../jobs/queue.js';
 
 /**
  * De-Flock / OpenStreetMap importer.
@@ -167,4 +169,66 @@ export async function importRegion(client: pg.ClientBase, bbox: Bbox): Promise<I
   const sourceId = await ensureOsmSource(client);
   const upserted = await importOsmNodes(client, nodes, sourceId);
   return { fetched: nodes.length, upserted };
+}
+
+/* --------------------- viewport-triggered auto import --------------------- */
+
+const DEFLOCK_ENABLED = (process.env.DEFLOCK_ENABLED ?? 'true') !== 'false';
+const COOLDOWN_HOURS = Number(process.env.DEFLOCK_COOLDOWN_HOURS ?? '168'); // re-import an area at most weekly
+const MAX_BBOX_DEG = Number(process.env.DEFLOCK_MAX_BBOX_DEG ?? '0.6'); // skip very zoomed-out viewports
+const TILE_DEG = Number(process.env.DEFLOCK_TILE_DEG ?? '0.1'); // ~11 km cooldown tiles
+const MIN_ZOOM = Number(process.env.DEFLOCK_MIN_ZOOM ?? '11');
+
+function tileKey(bbox: Bbox): string {
+  const cLat = (bbox.minLat + bbox.maxLat) / 2;
+  const cLng = (bbox.minLng + bbox.maxLng) / 2;
+  return `${Math.floor(cLat / TILE_DEG)}/${Math.floor(cLng / TILE_DEG)}`;
+}
+
+/**
+ * Best-effort viewport trigger: when the map shows a sufficiently-zoomed area,
+ * enqueue a background De-Flock import for it unless that tile was imported
+ * within the cooldown window. Never throws and never blocks — it's called
+ * fire-and-forget from the read path, so a fresh database fills in with real
+ * data as people browse without ever slowing the map down.
+ */
+export async function maybeEnqueueImport(bbox: Bbox | undefined, zoom: number | undefined): Promise<void> {
+  try {
+    if (!DEFLOCK_ENABLED || !bbox) return;
+    if (zoom !== undefined && zoom < MIN_ZOOM) return;
+    if (bbox.maxLng - bbox.minLng > MAX_BBOX_DEG || bbox.maxLat - bbox.minLat > MAX_BBOX_DEG) return;
+    const tile = tileKey(bbox);
+    // Atomically claim the tile: insert (new) or refresh only if past the
+    // cooldown, returning a row only when we actually claimed it — so concurrent
+    // viewport requests enqueue exactly one import.
+    const claimed = await queryOne<{ tile: string }>(
+      `INSERT INTO import_tiles (tile, imported_at) VALUES ($1, now())
+       ON CONFLICT (tile) DO UPDATE SET imported_at = now()
+         WHERE import_tiles.imported_at < now() - ($2 || ' hours')::interval
+       RETURNING tile`,
+      [tile, String(COOLDOWN_HOURS)],
+    );
+    if (!claimed) return;
+    await enqueueJob('import_region', { bbox, tile }, { priority: 8, maxAttempts: 3 });
+  } catch {
+    /* best-effort — De-Flock import must never affect the read path */
+  }
+}
+
+/** Job entry point: import a bbox using a pooled connection; records tile counts. */
+export async function runImportRegion(bbox: Bbox, tile?: string): Promise<ImportResult> {
+  const client = await pool.connect();
+  try {
+    const result = await importRegion(client, bbox);
+    if (tile) {
+      await client.query(
+        `INSERT INTO import_tiles (tile, imported_at, asset_count) VALUES ($1, now(), $2)
+         ON CONFLICT (tile) DO UPDATE SET imported_at = now(), asset_count = EXCLUDED.asset_count`,
+        [tile, result.upserted],
+      );
+    }
+    return result;
+  } finally {
+    client.release();
+  }
 }

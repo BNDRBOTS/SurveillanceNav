@@ -16,6 +16,7 @@ import { useStore } from '@/lib/store';
 import { fmtDate, fmtDateTime, fmtBytes } from '@/lib/format';
 import { ConfidenceBadge, StatusPill, VerificationBadge } from '@/components/Badges';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 import { TextArea, TextInput, FileDrop } from '@/components/Form';
 import { Skeleton, ErrorState } from '@/components/Feedback';
 import { haptics } from '@/lib/haptics';
@@ -125,7 +126,7 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
               </div>
             </div>
             <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close details">
-              ✕
+              <Icon name="x" size={18} />
             </button>
           </div>
 
@@ -201,11 +202,11 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
                         Dispute record
                       </button>
                       <button type="button" className="btn btn-sm btn-ghost" onClick={() => setFlagOpen(true)}>
-                        ⚑ Flag
+                        <Icon name="flag" size={14} /> Flag
                       </button>
                       {user.role !== 'viewer' ? (
                         <button type="button" className="btn btn-sm btn-ghost" onClick={markVerified}>
-                          ✓ Mark verified
+                          <Icon name="check" size={14} /> Mark verified
                         </button>
                       ) : null}
                     </>
@@ -288,7 +289,7 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
                 ) : (
                   asset.evidence.map((e) => (
                     <div key={e.id} className="card row" style={{ padding: 'var(--space-sm)' }}>
-                      <span aria-hidden="true">{e.fileType.startsWith('image/') ? '🖼' : '📄'}</span>
+                      <span aria-hidden="true">{e.fileType.startsWith('image/') ? <Icon name="image" size={16} /> : <Icon name="file-text" size={16} />}</span>
                       <div className="col" style={{ gap: 2, flex: 1 }}>
                         <span className="text-sm">{e.fileName}</span>
                         <span className="text-xs text-secondary">

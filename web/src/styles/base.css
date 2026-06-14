@@ -391,6 +391,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .timeline-item { position: relative; padding-bottom: var(--space-lg); }
 .timeline-item::before { content: ""; position: absolute; left: calc(-1 * var(--space-lg) + 2px); top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--color-accent); border: 2px solid var(--color-bg-primary); }
 .progressbar { height: 6px; border-radius: var(--radius-full); background: var(--color-border); overflow: hidden; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .progressbar > div { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width var(--motion-duration-med) var(--motion-ease); }
 
 .auth-layout { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-lg); }

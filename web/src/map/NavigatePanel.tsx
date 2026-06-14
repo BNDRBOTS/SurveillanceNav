@@ -187,7 +187,7 @@ export function NavigatePanel({
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => setOrigin({ label: 'My location', lng: pos.coords.longitude, lat: pos.coords.latitude }),
-      () => toast('Couldn’t get your location — search for a starting point or tap 🎯 then the map.', 'warning', 7000),
+      () => toast('Couldn’t get your location — search for a starting point, or tap the map to drop one.', 'warning', 7000),
       { enableHighAccuracy: true, timeout: 10_000 },
     );
   };
@@ -248,7 +248,7 @@ export function NavigatePanel({
           </div>
         ) : null}
 
-        <EndpointInput placeholder="From — search, paste coords, or 🧭" value={origin} onSelect={setOrigin} onUseMyLocation={useMyLocation} pickLabel="Tap the map to set start" onPickOnMap={() => onPick('origin')} />
+        <EndpointInput placeholder="From — search, paste coordinates, or use my location" value={origin} onSelect={setOrigin} onUseMyLocation={useMyLocation} pickLabel="Tap the map to set start" onPickOnMap={() => onPick('origin')} />
         <EndpointInput placeholder="To — where are you headed?" value={destination} onSelect={setDestination} pickLabel="Tap the map to set destination" onPickOnMap={() => onPick('destination')} />
 
         <div className="row" style={{ justifyContent: 'space-between' }}>

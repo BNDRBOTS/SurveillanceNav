@@ -8,6 +8,7 @@ import {
 } from '@stn/shared';
 import type { MapFilters } from './useAssets';
 import { TextInput } from '@/components/Form';
+import { Icon } from '@/components/Icon';
 import { haptics } from '@/lib/haptics';
 
 interface FilterSheetProps {
@@ -53,7 +54,7 @@ export function FilterSheet({ filters, onChange, onClose, resultCount, loading }
           {loading ? 'searching…' : resultCount !== null ? `${resultCount.toLocaleString()} results` : ''}
         </span>
         <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close filters">
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
 

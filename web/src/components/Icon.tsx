@@ -21,7 +21,22 @@ export type IconName =
   | 'bell'
   | 'plus'
   | 'check'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'locate'
+  | 'map-pin'
+  | 'volume-2'
+  | 'volume-x'
+  | 'camera'
+  | 'flag'
+  | 'car'
+  | 'footprints'
+  | 'bike'
+  | 'arrow-up-down'
+  | 'x'
+  | 'alert-triangle'
+  | 'zap'
+  | 'play'
+  | 'external-link';
 
 const PATHS: Record<IconName, JSX.Element> = {
   map: (
@@ -91,12 +106,108 @@ const PATHS: Record<IconName, JSX.Element> = {
   ),
   check: <polyline points="20 6 9 17 4 12" />,
   'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  locate: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="22" y1="12" x2="18" y2="12" />
+      <line x1="6" y1="12" x2="2" y2="12" />
+      <line x1="12" y1="6" x2="12" y2="2" />
+      <line x1="12" y1="22" x2="12" y2="18" />
+    </>
+  ),
+  'map-pin': (
+    <>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </>
+  ),
+  'volume-2': (
+    <>
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </>
+  ),
+  'volume-x': (
+    <>
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </>
+  ),
+  flag: (
+    <>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <line x1="4" y1="22" x2="4" y2="15" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <path d="M9 17h6" />
+      <circle cx="17" cy="17" r="2" />
+    </>
+  ),
+  footprints: (
+    <>
+      <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z" />
+      <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 1-4 0Z" />
+      <path d="M16 17h4" />
+      <path d="M4 13h4" />
+    </>
+  ),
+  bike: (
+    <>
+      <circle cx="5.5" cy="17.5" r="3.5" />
+      <circle cx="18.5" cy="17.5" r="3.5" />
+      <circle cx="15" cy="5" r="1" />
+      <path d="M12 17.5V14l-3-3 4-3 2 3h2" />
+    </>
+  ),
+  'arrow-up-down': (
+    <>
+      <path d="m21 16-4 4-4-4" />
+      <path d="M17 20V4" />
+      <path d="m3 8 4-4 4 4" />
+      <path d="M7 4v16" />
+    </>
+  ),
+  x: (
+    <>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </>
+  ),
+  'alert-triangle': (
+    <>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>
+  ),
+  zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+  play: <polygon points="6 3 20 12 6 21 6 3" />,
+  'external-link': (
+    <>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </>
+  ),
 };
 
 export function Icon({
   name,
   size = 20,
   strokeWidth = 1.6,
+  style,
   ...rest
 }: { name: IconName; size?: number; strokeWidth?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>): JSX.Element {
   return (
@@ -110,6 +221,7 @@ export function Icon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      style={{ verticalAlign: 'middle', flexShrink: 0, ...style }}
       {...rest}
     >
       {PATHS[name]}

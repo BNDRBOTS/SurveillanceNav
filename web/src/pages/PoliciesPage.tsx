@@ -7,6 +7,7 @@ import { fmtDate } from '@/lib/format';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, TextArea } from '@/components/Form';
+import { Icon } from '@/components/Icon';
 import { useDebounce } from '@/lib/useDebounce';
 
 export default function PoliciesPage(): JSX.Element {
@@ -76,7 +77,7 @@ export default function PoliciesPage(): JSX.Element {
         </div>
         {compare.map((j) => (
           <button key={j.id} type="button" className="chip" aria-pressed="true" onClick={() => setCompare(compare.filter((c) => c.id !== j.id))}>
-            {j.name} ✕
+            {j.name} <Icon name="x" size={14} />
           </button>
         ))}
       </div>
@@ -209,7 +210,7 @@ function AddPolicyModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </>
       }
     >
-      <TextInput label="Jurisdiction" value={jurisdiction ? jurisdiction.name : jurisdictionQuery} onChange={(e) => { setJurisdiction(null); setJurisdictionQuery(e.target.value); }} hint={jurisdiction ? '✓ selected' : 'Required'} />
+      <TextInput label="Jurisdiction" value={jurisdiction ? jurisdiction.name : jurisdictionQuery} onChange={(e) => { setJurisdiction(null); setJurisdictionQuery(e.target.value); }} hint={jurisdiction ? 'selected' : 'Required'} />
       {!jurisdiction && (matches?.items ?? []).length > 0 ? (
         <div className="col" style={{ gap: 2, marginTop: -8, marginBottom: 'var(--space-sm)' }}>
           {(matches?.items ?? []).slice(0, 5).map((j) => (

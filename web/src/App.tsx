@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/TopBar';
 import { SideNav, BottomNav } from '@/components/SideNav';
 import { Toasts, ErrorBoundary, Skeleton } from '@/components/Feedback';
+import { Icon } from '@/components/Icon';
 import { Announcer } from '@/lib/announcer';
 import { useStore } from '@/lib/store';
 
@@ -37,7 +38,7 @@ export function AppShell(): JSX.Element {
       <TopBar />
       {!online ? (
         <div className="banner" data-tone="warning" role="status">
-          ⚡ Offline mode — showing cached data; submissions are queued and will sync automatically.
+          <Icon name="wifi-off" size={16} /> Offline mode — showing cached data; submissions are queued and will sync automatically.
         </div>
       ) : null}
       <div className="shell">

@@ -78,7 +78,7 @@ export function NotFoundPage(): JSX.Element {
     <div className="auth-layout">
       <div className="card auth-card col" style={{ textAlign: 'center' }}>
         <h1>404</h1>
-        <p className="text-sm text-secondary">That page doesn’t exist — maybe it was redacted. 🗂</p>
+        <p className="text-sm text-secondary">That page doesn’t exist — maybe it was redacted.</p>
         <Link className="btn btn-primary" to="/map">
           Back to the map
         </Link>
@@ -94,7 +94,7 @@ const TOUR_STEPS = [
   },
   {
     title: 'The map is the front door',
-    body: 'Filter by technology, status, source, and confidence. Tap any point for full provenance. Use ◎ Nearby for radius analysis and ★ Views to save and share exact map states.',
+    body: 'Filter by technology, status, source, and confidence. Tap any point for full provenance. Use Nearby for radius analysis and Views to save and share exact map states.',
   },
   {
     title: 'FOIA without the guesswork',

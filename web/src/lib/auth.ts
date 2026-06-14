@@ -89,7 +89,7 @@ export async function syncOutbox(): Promise<void> {
   });
   store.setOutboxCount(await outboxCount());
   if (result.sent > 0) {
-    store.toast(`Synced ${result.sent} queued submission${result.sent === 1 ? '' : 's'} ✓`, 'success');
+    store.toast(`Synced ${result.sent} queued submission${result.sent === 1 ? '' : 's'}`, 'success');
     haptics.success();
   }
   if (result.dropped > 0) {

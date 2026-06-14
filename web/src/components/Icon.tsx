@@ -45,7 +45,11 @@ export type IconName =
   | 'link'
   | 'trash'
   | 'image'
-  | 'loader';
+  | 'loader'
+  | 'edit'
+  | 'eye'
+  | 'eye-off'
+  | 'wifi-off';
 
 const PATHS: Record<IconName, JSX.Element> = {
   map: (
@@ -251,6 +255,30 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   loader: <path d="M21 12a9 9 0 1 1-6.219-8.56" />,
+  edit: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />,
+  eye: (
+    <>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'eye-off': (
+    <>
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </>
+  ),
+  'wifi-off': (
+    <>
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+      <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </>
+  ),
 };
 
 export function Icon({

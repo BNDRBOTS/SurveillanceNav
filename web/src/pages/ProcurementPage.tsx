@@ -8,6 +8,7 @@ import { DataTable } from '@/components/DataTable';
 import { StatusPill, ConfidenceBadge } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 import { TextArea, TextInput, FileDrop } from '@/components/Form';
 import { useDebounce } from '@/lib/useDebounce';
 
@@ -247,7 +248,7 @@ function ReviewDrawer({ procurementId, onClose }: { procurementId: string; onClo
       <div className="drawer-header">
         <h2 style={{ fontSize: 'var(--font-size-lg)' }}>Review extraction</h2>
         <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close review">
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
       <div className="drawer-body col">
@@ -324,7 +325,7 @@ function ReviewDrawer({ procurementId, onClose }: { procurementId: string; onClo
             <div className="row-wrap">
               {user?.role === 'admin' && proc.reviewStatus !== 'approved' ? (
                 <button type="button" className="btn btn-primary" onClick={() => save({ reviewStatus: 'approved' })}>
-                  ✓ Approve & publish
+                  <Icon name="check" size={16} /> Approve & publish
                 </button>
               ) : null}
               {proc.reviewStatus !== 'rejected' ? (

@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store';
 import { get, patch, post, del, ApiError } from '@/lib/api';
 import { applySession, logout } from '@/lib/auth';
 import { TextInput, PasswordInput } from '@/components/Form';
+import { Icon } from '@/components/Icon';
 import { ConfirmDialog } from '@/components/Modal';
 import { clearDatasets } from '@/lib/offline';
 import { useQuery } from '@tanstack/react-query';
@@ -77,7 +78,7 @@ export default function SettingsPage(): JSX.Element {
         <div className="card col">
           <h2>Multi-factor authentication</h2>
           {user.mfaEnabled ? (
-            <p className="text-sm text-success">✓ MFA is active on this account.</p>
+            <p className="text-sm text-success"><Icon name="check" size={14} /> MFA is active on this account.</p>
           ) : mfaSecret ? (
             <>
               <p className="text-sm text-secondary">Add this secret to your authenticator app, then confirm a code:</p>
@@ -169,7 +170,7 @@ export default function SettingsPage(): JSX.Element {
                 }
               }}
             >
-              ⬇ Download my data
+              <Icon name="download" size={16} /> Download my data
             </button>
             <button
               type="button"
@@ -303,7 +304,7 @@ function BillingCard({ isAdmin }: { isAdmin: boolean }): JSX.Element | null {
       {data.plan === 'pro' ? (
         <>
           <p className="text-sm">
-            <span className="pill" data-tone="success">Supporter ✓</span>{' '}
+            <span className="pill" data-tone="success">Supporter <Icon name="check" size={14} /></span>{' '}
             <span className="text-secondary">Thank you — you fund the servers and the FOIA fee pool.</span>
           </p>
           <p className="text-xs text-secondary">Perks: export caps raised to 50,000 rows, priority processing.</p>

@@ -179,6 +179,13 @@ export function NavigatePanel({
   const result: RouteResponse | null = nav.result;
   const active = nav.active;
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const [preferGoogle, setPreferGoogle] = useState(() => localStorage.getItem('stn.preferGoogle') === 'true');
+  useEffect(() => {
+    get<{ googleAvailable: boolean }>('/navigation/config')
+      .then((c) => setGoogleAvailable(c.googleAvailable))
+      .catch(() => undefined);
+  }, []);
 
   const useMyLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -282,6 +289,24 @@ export function NavigatePanel({
             <span className="text-xs text-secondary">Routes around active LPRs, CCTV and sensors in the database</span>
           </span>
         </label>
+
+        {googleAvailable ? (
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={preferGoogle}
+              onChange={(e) => {
+                setPreferGoogle(e.target.checked);
+                localStorage.setItem('stn.preferGoogle', String(e.target.checked));
+              }}
+            />
+            <span className="text-sm">
+              <strong>Use Google routing</strong>
+              <br />
+              <span className="text-xs text-secondary">Google&rsquo;s directions (best-effort camera avoidance). Off keeps the private, hard-avoidance route.</span>
+            </span>
+          </label>
+        ) : null}
 
         <button type="button" className="btn btn-primary" onClick={onGo} disabled={!origin || !destination || nav.phase === 'routing'}>
           {nav.phase === 'routing' ? 'Routing…' : 'Get route'}

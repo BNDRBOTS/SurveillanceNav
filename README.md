@@ -43,7 +43,7 @@ login — MFA is enforced for administrators. The **first signup on an empty dat
 | **Collaboration** | Workspaces with viewer/editor/admin roles (deny-by-default), email invites, @mention comments with notifications, workspace-shared map views |
 | **Exports** | CSV (formula-injection safe), JSON, GeoJSON, KML, and PDF/HTML reports with vector map snapshots and methodology notes — generated async, short-TTL HMAC-signed downloads, automatic expiry |
 | **Offline / PWA** | Installable; service worker with cache strategies per resource; IndexedDB outbox replays queued submissions with idempotency keys (conflict-safe); dataset caches are SHA-256 integrity-checked on restore |
-| **Admin console** | Live metrics (p95 latency, error rate, cache hit ratio, DB/storage health), user management, curation queues (disputes/flags/merges/quarantine/PII), job queue with retry, 9 scheduled maintenance jobs with run-now/toggle, runtime settings + feature flags, audited rate-limit override, append-only audit log explorer |
+| **Admin console** | Live metrics (p95 latency, error rate, cache hit ratio, DB/storage health), user management, curation queues (disputes/flags/merges/quarantine/PII), job queue with retry, 10 scheduled maintenance jobs with run-now/toggle, runtime settings + feature flags, audited rate-limit override, append-only audit log explorer |
 | **Security** | scrypt passwords, 15-min HS256 JWTs + rotating refresh tokens with reuse detection (family revocation), TOTP MFA (required for admins), CSRF double-submit, strict CSP & full security-header suite, per-user+IP rate limiting with Retry-After, JSON-bomb guards, zero-width input sanitation, account lockout, append-only audit DB triggers |
 
 ## Architecture

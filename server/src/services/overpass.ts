@@ -249,20 +249,23 @@ const METROS: ReadonlyArray<readonly [number, number]> = [
 const METRO_RADIUS_DEG = 0.22;
 
 /**
- * Proactively populate (and, on later boots past the cooldown, refresh) De-Flock
- * data for major metros so the map is never empty. Reuses the cooldown-guarded
- * viewport importer, so repeated boots never hammer Overpass. Best-effort.
+ * Enqueue a De-Flock import for every covered metro (idempotent upserts). Run by
+ * the scheduled deflock_refresh job: it populates on first boot (the scheduler
+ * fires it shortly after start) and keeps the map synced with De-Flock daily.
+ * Direct enqueue (no per-tile cooldown) so each daily run actually refreshes.
  */
-export async function seedDeflockMetros(): Promise<void> {
+export async function refreshDeflockMetros(): Promise<{ enqueued: number }> {
+  if (!DEFLOCK_ENABLED) return { enqueued: 0 };
+  let enqueued = 0;
   for (const [lng, lat] of METROS) {
-    await maybeEnqueueImport(
-      {
-        minLng: lng - METRO_RADIUS_DEG,
-        minLat: lat - METRO_RADIUS_DEG,
-        maxLng: lng + METRO_RADIUS_DEG,
-        maxLat: lat + METRO_RADIUS_DEG,
-      },
-      MIN_ZOOM,
-    );
+    const bbox = {
+      minLng: lng - METRO_RADIUS_DEG,
+      minLat: lat - METRO_RADIUS_DEG,
+      maxLng: lng + METRO_RADIUS_DEG,
+      maxLat: lat + METRO_RADIUS_DEG,
+    };
+    const id = await enqueueJob('import_region', { bbox, tile: tileKey(bbox) }, { priority: 6, maxAttempts: 3 });
+    if (id) enqueued += 1;
   }
+  return { enqueued };
 }

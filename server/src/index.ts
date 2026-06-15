@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { config } from './config.js';
 import { runMigrations } from './db/migrate.js';
+import { seedReference } from './db/seed.js';
 import { closePool, pool } from './db/pool.js';
 import { cache } from './cache/index.js';
 import { startScheduler, stopScheduler } from './jobs/scheduler.js';
@@ -14,6 +15,34 @@ async function main(): Promise<void> {
       await runMigrations(client as never, (m) => process.stdout.write(`[migrate] ${m}\n`));
     } finally {
       client.release();
+    }
+  }
+
+  // Load real reference data (jurisdictions, FOIA templates, source registry,
+  // policy timeline) so a fresh deployment is never blank. Idempotent and
+  // non-destructive: only runs when no jurisdictions exist yet, inside a
+  // transaction, and best-effort — a failure here must never block boot.
+  if ((process.env.SEED_REFERENCE ?? 'true') === 'true') {
+    const seedClient = await pool.connect();
+    try {
+      const { rows } = await seedClient.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM jurisdictions`,
+      );
+      if ((rows[0]?.n ?? 0) === 0) {
+        process.stdout.write('[seed] empty database — loading reference data\n');
+        await seedClient.query('BEGIN');
+        try {
+          await seedReference(seedClient, (m) => process.stdout.write(`[seed] ${m}\n`));
+          await seedClient.query('COMMIT');
+        } catch (err) {
+          await seedClient.query('ROLLBACK');
+          throw err;
+        }
+      }
+    } catch (err) {
+      process.stderr.write(`[seed] reference data load skipped: ${(err as Error).message}\n`);
+    } finally {
+      seedClient.release();
     }
   }
 

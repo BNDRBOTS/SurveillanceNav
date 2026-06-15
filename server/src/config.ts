@@ -40,6 +40,7 @@ const routingConfig = {
   valhallaUrl: process.env.VALHALLA_URL ?? '',
   orsApiKey: process.env.ORS_API_KEY ?? '',
   osrmUrl: process.env.OSRM_URL ?? 'https://router.project-osrm.org',
+  googleApiKey: process.env.GOOGLE_MAPS_API_KEY ?? '',
   nominatimUrl: process.env.NOMINATIM_URL ?? 'https://nominatim.openstreetmap.org',
   nominatimEmail: process.env.NOMINATIM_EMAIL ?? '',
 };

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import pg from 'pg';
 import { config } from '../config.js';
 import { hashPassword } from '../auth/crypto.js';
@@ -321,6 +322,97 @@ Sincerely,
   },
 ];
 
+/**
+ * Real reference data: jurisdictions (country/state/city), the source registry,
+ * FOIA request templates, and real municipal surveillance ordinances for the
+ * policy timeline — NOT sample/demo records. Idempotent upserts. Run both by the
+ * dev seed (`main` below) and automatically on first boot of an empty database
+ * (see server/src/index.ts), so a fresh production deploy is never blank.
+ * Returns the jurisdiction/source id maps the demo asset generator reuses.
+ */
+export async function seedReference(
+  client: pg.ClientBase,
+  log: (msg: string) => void = () => {},
+): Promise<{
+  usId: string;
+  stateIds: Map<string, string>;
+  cityIds: Map<string, string>;
+  sourceIds: Array<{ id: string; type: SourceType; verification: VerificationStatus }>;
+}> {
+  /* ---------------- jurisdictions ---------------- */
+  const { rows: usRows } = await client.query(
+    `INSERT INTO jurisdictions (name, type) VALUES ('United States', 'country')
+     ON CONFLICT (lower(name), type) DO UPDATE SET updated_at = now() RETURNING id`,
+  );
+  const usId = (usRows[0] as { id: string }).id;
+
+  const stateIds = new Map<string, string>();
+  for (const s of FOIA_STATUTES) {
+    if (s.abbr === 'DC') continue;
+    const { rows } = await client.query(
+      `INSERT INTO jurisdictions (name, type, parent_id) VALUES ($1, 'state', $2)
+       ON CONFLICT (lower(name), type) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`,
+      [s.state, usId],
+    );
+    stateIds.set(s.state, (rows[0] as { id: string }).id);
+  }
+  log(`jurisdictions: 1 country + ${stateIds.size} states`);
+
+  const cityIds = new Map<string, string>();
+  for (const c of CITIES) {
+    const geojson = {
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [c.lng, c.lat] },
+      properties: { name: c.name },
+    };
+    const { rows } = await client.query(
+      `INSERT INTO jurisdictions (name, type, parent_id, geojson) VALUES ($1, 'city', $2, $3)
+       ON CONFLICT (lower(name), type) DO UPDATE SET geojson = EXCLUDED.geojson RETURNING id`,
+      [c.name, stateIds.get(c.state) ?? null, JSON.stringify(geojson)],
+    );
+    cityIds.set(c.name, (rows[0] as { id: string }).id);
+  }
+  log(`jurisdictions: ${cityIds.size} cities`);
+
+  /* ---------------- sources ---------------- */
+  const sourceIds: Array<{ id: string; type: SourceType; verification: VerificationStatus }> = [];
+  for (const s of SOURCES) {
+    const { rows } = await client.query(
+      `INSERT INTO sources (name, type, url, verification_status, last_verified_at)
+       VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'verified' THEN now() - interval '20 days' ELSE NULL END)
+       ON CONFLICT (lower(name)) DO UPDATE SET verification_status = EXCLUDED.verification_status RETURNING id`,
+      [s.name, s.type, s.url, s.verification],
+    );
+    sourceIds.push({ id: (rows[0] as { id: string }).id, type: s.type, verification: s.verification });
+  }
+  log(`sources: ${sourceIds.length}`);
+
+  /* ---------------- FOIA templates ---------------- */
+  for (const t of FOIA_TEMPLATES) {
+    await client.query(
+      `INSERT INTO foia_templates (name, technology, body) VALUES ($1, $2, $3)
+       ON CONFLICT (name) DO UPDATE SET body = EXCLUDED.body, technology = EXCLUDED.technology`,
+      [t.name, t.technology, t.body],
+    );
+  }
+  log(`foia templates: ${FOIA_TEMPLATES.length}`);
+
+  /* ---------------- policies ---------------- */
+  for (const p of POLICIES) {
+    const jId = cityIds.get(p.city);
+    if (!jId) continue;
+    await client.query(
+      `INSERT INTO policies (jurisdiction_id, title, effective_date, source_url, content)
+       SELECT $1, $2, $3, $4, $5
+       WHERE NOT EXISTS (SELECT 1 FROM policies WHERE jurisdiction_id = $1 AND title = $2)`,
+      [jId, p.title, p.date, p.url, p.content],
+    );
+  }
+  log(`policies: ${POLICIES.length}`);
+
+  return { usId, stateIds, cityIds, sourceIds };
+}
+
 async function main(): Promise<void> {
   const client = new pg.Client({ connectionString: config.databaseUrl });
   await client.connect();
@@ -333,76 +425,7 @@ async function main(): Promise<void> {
       log('Database already seeded — set SEED_FORCE=true to re-run (idempotent upserts).');
     }
 
-    /* ---------------- jurisdictions ---------------- */
-    const { rows: usRows } = await client.query(
-      `INSERT INTO jurisdictions (name, type) VALUES ('United States', 'country')
-       ON CONFLICT (lower(name), type) DO UPDATE SET updated_at = now() RETURNING id`,
-    );
-    const usId = (usRows[0] as { id: string }).id;
-
-    const stateIds = new Map<string, string>();
-    for (const s of FOIA_STATUTES) {
-      if (s.abbr === 'DC') continue;
-      const { rows } = await client.query(
-        `INSERT INTO jurisdictions (name, type, parent_id) VALUES ($1, 'state', $2)
-         ON CONFLICT (lower(name), type) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`,
-        [s.state, usId],
-      );
-      stateIds.set(s.state, (rows[0] as { id: string }).id);
-    }
-    log(`jurisdictions: 1 country + ${stateIds.size} states`);
-
-    const cityIds = new Map<string, string>();
-    for (const c of CITIES) {
-      const geojson = {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [c.lng, c.lat] },
-        properties: { name: c.name },
-      };
-      const { rows } = await client.query(
-        `INSERT INTO jurisdictions (name, type, parent_id, geojson) VALUES ($1, 'city', $2, $3)
-         ON CONFLICT (lower(name), type) DO UPDATE SET geojson = EXCLUDED.geojson RETURNING id`,
-        [c.name, stateIds.get(c.state) ?? null, JSON.stringify(geojson)],
-      );
-      cityIds.set(c.name, (rows[0] as { id: string }).id);
-    }
-    log(`jurisdictions: ${cityIds.size} cities`);
-
-    /* ---------------- sources ---------------- */
-    const sourceIds: Array<{ id: string; type: SourceType; verification: VerificationStatus }> = [];
-    for (const s of SOURCES) {
-      const { rows } = await client.query(
-        `INSERT INTO sources (name, type, url, verification_status, last_verified_at)
-         VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'verified' THEN now() - interval '20 days' ELSE NULL END)
-         ON CONFLICT (lower(name)) DO UPDATE SET verification_status = EXCLUDED.verification_status RETURNING id`,
-        [s.name, s.type, s.url, s.verification],
-      );
-      sourceIds.push({ id: (rows[0] as { id: string }).id, type: s.type, verification: s.verification });
-    }
-    log(`sources: ${sourceIds.length}`);
-
-    /* ---------------- FOIA templates ---------------- */
-    for (const t of FOIA_TEMPLATES) {
-      await client.query(
-        `INSERT INTO foia_templates (name, technology, body) VALUES ($1, $2, $3)
-         ON CONFLICT (name) DO UPDATE SET body = EXCLUDED.body, technology = EXCLUDED.technology`,
-        [t.name, t.technology, t.body],
-      );
-    }
-    log(`foia templates: ${FOIA_TEMPLATES.length}`);
-
-    /* ---------------- policies ---------------- */
-    for (const p of POLICIES) {
-      const jId = cityIds.get(p.city);
-      if (!jId) continue;
-      await client.query(
-        `INSERT INTO policies (jurisdiction_id, title, effective_date, source_url, content)
-         SELECT $1, $2, $3, $4, $5
-         WHERE NOT EXISTS (SELECT 1 FROM policies WHERE jurisdiction_id = $1 AND title = $2)`,
-        [jId, p.title, p.date, p.url, p.content],
-      );
-    }
-    log(`policies: ${POLICIES.length}`);
+    const { cityIds, sourceIds } = await seedReference(client, log);
 
     /* ---------------- assets ---------------- */
     const scale = process.env.SEED_SCALE === 'perf' ? 70 : 1;
@@ -567,7 +590,11 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  console.error('[seed] failed:', err);
-  process.exit(1);
-});
+const invokedDirectly =
+  process.argv[1] !== undefined && path.resolve(process.argv[1]).includes('seed');
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error('[seed] failed:', err);
+    process.exit(1);
+  });
+}

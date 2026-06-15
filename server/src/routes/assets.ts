@@ -21,6 +21,7 @@ import { scanUpload } from '../services/scanner.js';
 import { storage, evidenceKey, quarantineKey } from '../storage/index.js';
 import { cache, cachedJson } from '../cache/index.js';
 import { enqueueJob } from '../jobs/queue.js';
+import { maybeEnqueueImport } from '../services/overpass.js';
 
 let postgisChecked = false;
 let postgis = false;
@@ -187,6 +188,10 @@ export function registerAssetRoutes(app: FastifyInstance): void {
     const q = parseOrThrow(listAssetsQuery, req.query);
     const filters = buildFilters(q);
     const cacheKey = `assets:${JSON.stringify(req.query)}`;
+
+    // De-Flock: auto-import this viewport in the background (throttled per tile,
+    // best-effort, never blocks). A fresh map fills in with real data as browsed.
+    void maybeEnqueueImport(q.bbox, q.zoom);
 
     if (!isDbHealthy()) {
       const cached = await cache.get(cacheKey);

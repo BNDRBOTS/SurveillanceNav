@@ -1,6 +1,7 @@
 import { Component, useEffect, type ReactNode } from 'react';
 import { useStore, type Toast } from '@/lib/store';
 import { announce } from '@/lib/announcer';
+import { Icon } from '@/components/Icon';
 
 /* ------------------------------- toasts ------------------------------- */
 
@@ -16,7 +17,7 @@ function ToastItem({ toast }: { toast: Toast }): JSX.Element {
     <div className="toast" data-tone={toast.tone} role={toast.tone === 'error' ? 'alert' : 'status'}>
       <span style={{ flex: 1 }}>{toast.message}</span>
       <button type="button" onClick={() => dismiss(toast.id)} aria-label="Dismiss notification">
-        ✕
+        <Icon name="x" size={16} />
       </button>
     </div>
   );

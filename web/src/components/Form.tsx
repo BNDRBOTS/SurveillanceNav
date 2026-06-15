@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { passwordStrength, fmtBytes } from '@/lib/format';
 import { LIMITS, ALLOWED_UPLOAD_MIME } from '@stn/shared';
+import { Icon } from '@/components/Icon';
 
 interface FieldProps {
   label: string;
@@ -108,7 +109,7 @@ export function PasswordInput({
               aria-label={show ? 'Hide password' : 'Show password'}
               aria-pressed={show}
             >
-              {show ? '🙈' : '👁'}
+              {show ? <Icon name="eye-off" size={18} /> : <Icon name="eye" size={18} />}
             </button>
           </div>
           {withMeter ? (

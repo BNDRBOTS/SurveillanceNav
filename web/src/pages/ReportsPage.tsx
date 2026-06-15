@@ -7,6 +7,7 @@ import { fmtDateTime, fmtNumber } from '@/lib/format';
 import { StatusPill } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Select } from '@/components/Form';
+import { Icon } from '@/components/Icon';
 import { haptics } from '@/lib/haptics';
 
 const RESOURCES = [
@@ -136,7 +137,7 @@ export default function ReportsPage(): JSX.Element {
               <StatusPill status={e.status} />
               {e.status === 'completed' && e.downloadUrl ? (
                 <a className="btn btn-sm btn-primary" href={e.downloadUrl} download onClick={() => haptics.success()}>
-                  ⬇ Download
+                  <Icon name="download" size={16} /> Download
                 </a>
               ) : e.status === 'queued' || e.status === 'processing' ? (
                 <span className="text-xs text-secondary" aria-live="polite">

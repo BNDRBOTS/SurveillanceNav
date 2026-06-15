@@ -14,6 +14,7 @@ import { get, post, patch, del, uploadFile, ApiError } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { fmtDate, fmtBytes } from '@/lib/format';
 import { DataTable } from '@/components/DataTable';
+import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { TextInput, TextArea, Select, FileDrop } from '@/components/Form';
@@ -224,7 +225,7 @@ export function FoiaNewPage(): JSX.Element {
               setJurisdictionQuery(e.target.value);
             }}
             placeholder="Start typing a city, county, or state…"
-            hint={jurisdiction ? '✓ statute will be cited automatically' : undefined}
+            hint={jurisdiction ? 'statute will be cited automatically' : undefined}
           />
           {!jurisdiction && (jurisdictions?.items ?? []).length > 0 ? (
             <div className="col" style={{ gap: 2, marginTop: -8 }}>
@@ -244,7 +245,7 @@ export function FoiaNewPage(): JSX.Element {
             <input id="months-range" type="range" min={3} max={84} step={3} value={months} onChange={(e) => setMonths(Number(e.target.value))} style={{ accentColor: 'var(--color-accent)', minHeight: 'var(--touch-target)' }} />
           </div>
           <button type="button" className="btn btn-primary" onClick={compose} disabled={composing || !templateId} style={{ alignSelf: 'flex-start' }}>
-            {composing ? 'Composing…' : '✍ Compose letter'}
+            {composing ? 'Composing…' : <><Icon name="edit" size={16} /> Compose letter</>}
           </button>
         </div>
 
@@ -254,7 +255,7 @@ export function FoiaNewPage(): JSX.Element {
           </h2>
           {statute ? (
             <div className="banner" data-tone="info" style={{ borderRadius: 'var(--radius-md)' }}>
-              ⚖️ {statute.lawName} ({statute.citation}) —{' '}
+              <Icon name="scale" size={14} /> {statute.lawName} ({statute.citation}) —{' '}
               {statute.responseDays
                 ? `${statute.responseDays} ${statute.businessDays ? 'business' : 'calendar'} day response window`
                 : 'reasonable-time response standard'}
@@ -521,7 +522,7 @@ function DocumentRow({ doc, foiaId, onChanged }: { doc: FoiaDocument; foiaId: st
   return (
     <div className="card col" style={{ padding: 'var(--space-sm)', gap: 6 }}>
       <div className="row">
-        <span aria-hidden="true">📄</span>
+        <Icon name="file-text" size={16} />
         <div className="col" style={{ gap: 0, flex: 1 }}>
           <span className="text-sm">{doc.fileName}</span>
           <span className="text-xs text-secondary">
@@ -539,7 +540,7 @@ function DocumentRow({ doc, foiaId, onChanged }: { doc: FoiaDocument; foiaId: st
           }}
           aria-label={`Remove ${doc.fileName}`}
         >
-          🗑
+          <Icon name="trash" size={16} />
         </button>
       </div>
       <button type="button" className="btn btn-sm btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setEditing((e) => !e)} aria-expanded={editing}>

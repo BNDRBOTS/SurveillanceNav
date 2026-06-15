@@ -104,7 +104,13 @@ export function useNavigation(args: {
     ): Promise<RouteResponse | null> => {
       setState((s) => ({ ...s, phase: 'routing', error: null }));
       try {
-        const result = await post<RouteResponse>('/navigation/route', { origin, destination, mode, avoid });
+        const result = await post<RouteResponse>('/navigation/route', {
+          origin,
+          destination,
+          mode,
+          avoid,
+          preferGoogle: localStorage.getItem('stn.preferGoogle') === 'true',
+        });
         const active = result.avoidant ?? result.fastest;
         setState((s) => ({
           ...s,

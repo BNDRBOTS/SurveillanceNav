@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { latitude, longitude, safeString } from '@stn/shared';
 import { parseOrThrow } from '../lib/validation.js';
 import { badRequest, serviceUnavailable } from '../lib/errors.js';
-import { computeRoute, geocode, reverseGeocode, activeEngine, type TravelMode } from '../services/routing.js';
+import { computeRoute, geocode, reverseGeocode, activeEngine, googleRoutingAvailable, type TravelMode } from '../services/routing.js';
 import { cachedJson } from '../cache/index.js';
 
 const routeBody = z.object({
@@ -18,6 +18,7 @@ const routeBody = z.object({
       technologyType: z.array(safeString(40)).max(12).optional(),
     })
     .default({}),
+  preferGoogle: z.boolean().default(false),
 });
 
 export function registerNavigationRoutes(app: FastifyInstance): void {
@@ -62,18 +63,21 @@ export function registerNavigationRoutes(app: FastifyInstance): void {
     if (crow > 6) {
       throw badRequest('Routes are limited to regional trips (~500 km). Break longer journeys into segments.');
     }
-    if (activeEngine().name === 'none') {
+    if (activeEngine().name === 'none' && !(body.preferGoogle && googleRoutingAvailable())) {
       throw serviceUnavailable('No routing engine is configured. Set VALHALLA_URL, ORS_API_KEY, or OSRM_URL.');
     }
 
     const cacheKey = `route:${activeEngine().name}:${JSON.stringify(body)}`;
     try {
       return await cachedJson(cacheKey, 60, () =>
-        computeRoute(origin, destination, body.mode as TravelMode, body.avoid),
+        computeRoute(origin, destination, body.mode as TravelMode, body.avoid, body.preferGoogle),
       );
     } catch (err) {
       req.log.warn({ err }, 'routing failed');
       throw serviceUnavailable('Routing is temporarily unavailable — all engines unreachable. Try again shortly.');
     }
   });
+
+  /** Which optional routing capabilities are available to the client. */
+  app.get('/navigation/config', async () => ({ googleAvailable: googleRoutingAvailable() }));
 }

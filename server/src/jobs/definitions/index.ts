@@ -11,6 +11,7 @@ import { PdfBuilder } from '../../lib/pdf.js';
 import { audit } from '../../services/audit.js';
 import { TECH_COLORS, LIMITS, type TechnologyType } from '@stn/shared';
 import type { JobHandler } from '../queue.js';
+import { runImportRegion, refreshDeflockMetros, type Bbox } from '../../services/overpass.js';
 
 export const scheduleDefaults: Array<{ name: string; description: string; intervalSec: number }> = [
   { name: 'integrity_check', description: 'Detect duplicate assets, orphaned evidence, and records missing jurisdictions; queue for curator review.', intervalSec: 21_600 },
@@ -22,6 +23,7 @@ export const scheduleDefaults: Array<{ name: string; description: string; interv
   { name: 'export_cleanup', description: 'Expire and delete old export files; release storage.', intervalSec: 3_600 },
   { name: 'index_maintenance', description: 'ANALYZE hot tables, vacuum when dead-tuple ratio is high, alert on bloat anomalies.', intervalSec: 86_400 },
   { name: 'foia_deadline_check', description: 'Notify owners of FOIA requests approaching or past their statutory deadline.', intervalSec: 3_600 },
+  { name: 'deflock_refresh', description: 'Refresh De-Flock / OpenStreetMap surveillance data for covered metro regions, keeping the live map in sync.', intervalSec: 86_400 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -729,7 +731,18 @@ const generateExport: JobHandler = async (payload) => {
   return { rows: rows.length, truncated, key };
 };
 
+const importRegionJob: JobHandler = async (payload) => {
+  const bbox = payload.bbox as Bbox | undefined;
+  const tile = typeof payload.tile === 'string' ? payload.tile : undefined;
+  if (!bbox || typeof bbox.minLng !== 'number') return { skipped: 'invalid bbox' };
+  return { ...(await runImportRegion(bbox, tile)) };
+};
+
+const deflockRefresh: JobHandler = async () => ({ ...(await refreshDeflockMetros()) });
+
 export const jobDefinitions: Record<string, JobHandler> = {
+  import_region: importRegionJob,
+  deflock_refresh: deflockRefresh,
   integrity_check: integrityCheck,
   retention_enforcement: retentionEnforcement,
   cache_warmup: cacheWarmup,

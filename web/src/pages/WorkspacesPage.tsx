@@ -278,7 +278,7 @@ export function WorkspaceDetailPage(): JSX.Element {
         <Link to="/map" className="card stat-card" style={{ textDecoration: 'none' }}>
           <span className="text-sm text-secondary">Shared map views</span>
           <span className="stat-value">→</span>
-          <span className="text-xs text-secondary">Saved views appear in the map's ★ Views panel</span>
+          <span className="text-xs text-secondary">Saved views appear in the map's Views panel</span>
         </Link>
         <Link to="/reports" className="card stat-card" style={{ textDecoration: 'none' }}>
           <span className="text-sm text-secondary">Exports</span>

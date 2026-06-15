@@ -146,7 +146,7 @@ export function SignupPage(): JSX.Element {
         <label className="checkbox-row">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} aria-invalid={!!fieldErrors.terms} />
           <span className="text-sm">
-            I accept the <Link to="/privacy">privacy policy</Link> and terms: public-interest use, no harassment, no doxxing.
+            I accept the <Link to="/privacy">privacy policy</Link> and <Link to="/terms">terms of use</Link>: public-interest use, no harassment, no doxxing.
             {fieldErrors.terms ? <span className="field-error"> {fieldErrors.terms}</span> : null}
           </span>
         </label>

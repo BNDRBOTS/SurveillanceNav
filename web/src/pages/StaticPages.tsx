@@ -73,12 +73,77 @@ export function PrivacyPage(): JSX.Element {
   );
 }
 
+export function TermsPage(): JSX.Element {
+  return (
+    <div className="page" style={{ maxWidth: 760 }}>
+      <h1>Terms &amp; acceptable use</h1>
+      <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
+        Plain-language terms for using Lens of Light. By creating an account or contributing, you agree to these.
+      </p>
+      <div className="col">
+        <div className="card col">
+          <h2>What this platform is for</h2>
+          <p className="text-sm text-secondary">
+            Lens of Light is a public-interest tool for mapping and understanding surveillance <em>infrastructure</em> —
+            cameras, license plate readers, and similar systems in public space. Use it for journalism, research,
+            advocacy, oversight, and personal awareness.
+          </p>
+        </div>
+        <div className="card col">
+          <h2>Acceptable use</h2>
+          <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)' }}>
+            <li>Document <strong>infrastructure, not people</strong> — no faces, license plates, home interiors, or personal information.</li>
+            <li>No harassment, stalking, doxxing, or targeting of individuals, including equipment operators.</li>
+            <li>Contribute only observations from <strong>public space</strong> that you have the right to share.</li>
+            <li>Follow the law in your jurisdiction; never use the platform to facilitate harm or illegal activity.</li>
+            <li>Don't scrape, overload, or attempt to defeat the service or its security controls.</li>
+          </ul>
+          <p className="text-sm text-secondary">Accounts that violate these may be suspended, and abusive content is removed.</p>
+        </div>
+        <div className="card col">
+          <h2>Accuracy &amp; no warranty</h2>
+          <p className="text-sm text-secondary">
+            Data here is community-sourced and partly <strong>imported from open datasets</strong> (e.g. De-Flock /
+            OpenStreetMap). It can be incomplete, out of date, or wrong, and confidence scores are estimates, not
+            guarantees. The platform is provided <strong>&ldquo;as is,&rdquo; without warranties</strong> — verify
+            anything important independently. Nothing here is legal advice.
+          </p>
+        </div>
+        <div className="card col">
+          <h2>Your contributions</h2>
+          <p className="text-sm text-secondary">
+            You keep ownership of what you submit. You confirm you have the right to share it and grant us a
+            non-exclusive license to host, display, and distribute it as part of the public record (including in exports).
+            Imported open data keeps its original license — OpenStreetMap-derived records are © OpenStreetMap contributors
+            under the ODbL. Records stay attributed to you until you delete your account, after which they are
+            de-attributed, not erased from the public record.
+          </p>
+        </div>
+        <div className="card col">
+          <h2>Liability</h2>
+          <p className="text-sm text-secondary">
+            Lens of Light is a transparency tool, not a substitute for your own judgment. To the maximum extent permitted
+            by law, we are not liable for how the data is used or for damages arising from use of the platform.
+          </p>
+        </div>
+        <div className="card col">
+          <h2>Changes</h2>
+          <p className="text-sm text-secondary">
+            We may update these terms as the platform evolves; material changes will be noted in-app, and continued use
+            means you accept them. To raise a concern, use the in-app report and dispute tools.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function NotFoundPage(): JSX.Element {
   return (
     <div className="auth-layout">
       <div className="card auth-card col" style={{ textAlign: 'center' }}>
         <h1>404</h1>
-        <p className="text-sm text-secondary">That page doesn’t exist — maybe it was redacted. 🗂</p>
+        <p className="text-sm text-secondary">That page doesn’t exist — maybe it was redacted.</p>
         <Link className="btn btn-primary" to="/map">
           Back to the map
         </Link>
@@ -94,7 +159,7 @@ const TOUR_STEPS = [
   },
   {
     title: 'The map is the front door',
-    body: 'Filter by technology, status, source, and confidence. Tap any point for full provenance. Use ◎ Nearby for radius analysis and ★ Views to save and share exact map states.',
+    body: 'Filter by technology, status, source, and confidence. Tap any point for full provenance. Use Nearby for radius analysis and Views to save and share exact map states.',
   },
   {
     title: 'FOIA without the guesswork',

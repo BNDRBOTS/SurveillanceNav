@@ -9,6 +9,7 @@ import type { AssetFeatureCollection } from './useAssets';
 import { useStore } from '@/lib/store';
 import { haptics } from '@/lib/haptics';
 import { announce } from '@/lib/announcer';
+import { Icon } from '@/components/Icon';
 
 export interface LayerConfig {
   clustering: boolean;
@@ -504,7 +505,13 @@ export function MapCanvas({
                 : 'Find me'
           }
         >
-          {locate.status === 'locating' ? '⏳' : locate.status === 'active' ? '📍' : '🧭'}
+          {locate.status === 'locating' ? (
+            <Icon name="loader" size={18} style={{ animation: 'spin 0.8s linear infinite' }} />
+          ) : locate.status === 'active' ? (
+            <Icon name="map-pin" size={18} />
+          ) : (
+            <Icon name="locate" size={18} />
+          )}
         </button>
       </div>
       <div className="map-legend" aria-label="Legend">

@@ -1,6 +1,7 @@
-# FULL AUDIT REPORT — STATUS: PASS
+# INTERNAL AUDIT REPORT — STATUS: PASS
 
-**Surveillance Transparency Navigator v1.0 · audited 2026-06-11**
+**Surveillance Transparency Navigator v1.0 · internal audit 2026-06-11**
+_Self-conducted via `make audit` (not a third-party security assessment; an external penetration test remains on the pre-launch checklist)._
 Environment: Node 22.22 · PostgreSQL 16.13 + PostGIS 3.4 · Redis 7.0 · Linux x86_64.
 Every result below was produced by executing the listed command in this repository — reproduce with
 `make audit && bash scripts/smoke.sh`.
@@ -99,7 +100,7 @@ discard events.
 ## 5 · Verdict
 
 Security ✓ · Privacy/retention ✓ · Data integrity ✓ · Accessibility ✓ · Performance budgets ✓ ·
-Resilience ✓ · UX flows E2E ✓ — **fully-audited = PASS.**
+Resilience ✓ · UX flows E2E ✓ — **internal audit = PASS.**
 
 ---
 

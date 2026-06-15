@@ -27,7 +27,7 @@ import { registerAdminRoutes } from './routes/admin.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerNavigationRoutes } from './routes/navigation.js';
 import { registerBillingRoutes } from './routes/billing.js';
-import { openapiDocument } from './openapi.js';
+import { openapiDocument, renderDocsHtml } from './openapi.js';
 import { API_PREFIX } from '@stn/shared';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -83,6 +83,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Spec-literal health paths (also under /api/v1 via the block above).
   registerHealthRoutes(app);
+
+  // Human-readable, no-JS API reference (renders the OpenAPI spec). Works under
+  // the strict app CSP (inline styles only, no scripts) — no relaxation needed.
+  app.get('/docs', async (_req, reply) => reply.type('text/html').send(renderDocsHtml()));
 
   // Serve the built SPA same-origin (production / integrated dev).
   const dist = config.webDistDir;

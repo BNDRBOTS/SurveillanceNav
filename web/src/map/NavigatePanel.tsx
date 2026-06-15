@@ -9,6 +9,7 @@ import { get } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { haptics } from '@/lib/haptics';
 import { useDebounce } from '@/lib/useDebounce';
+import { Icon } from '@/components/Icon';
 import type { NavState, RouteResponse } from './useNavigation';
 
 /**
@@ -63,7 +64,7 @@ function EndpointInput({
     const q = debounced.trim();
     const coords = parseCoordinates(q);
     if (coords) {
-      setHits([{ label: `📍 ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, ...coords }]);
+      setHits([{ label: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, ...coords }]);
       return;
     }
     if (q.length < 3) {
@@ -107,11 +108,11 @@ function EndpointInput({
         />
         {onUseMyLocation ? (
           <button type="button" className="btn btn-icon btn-ghost" title="Use my location" aria-label="Use my location" onClick={onUseMyLocation}>
-            🧭
+            <Icon name="locate" size={18} />
           </button>
         ) : null}
         <button type="button" className="btn btn-icon btn-ghost" title={pickLabel} aria-label={pickLabel} onClick={onPickOnMap}>
-          🎯
+          <Icon name="map-pin" size={18} />
         </button>
       </div>
       {!value && (hits.length > 0 || searching) ? (
@@ -178,6 +179,13 @@ export function NavigatePanel({
   const result: RouteResponse | null = nav.result;
   const active = nav.active;
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const [preferGoogle, setPreferGoogle] = useState(() => localStorage.getItem('stn.preferGoogle') === 'true');
+  useEffect(() => {
+    get<{ googleAvailable: boolean }>('/navigation/config')
+      .then((c) => setGoogleAvailable(c.googleAvailable))
+      .catch(() => undefined);
+  }, []);
 
   const useMyLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -186,7 +194,7 @@ export function NavigatePanel({
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => setOrigin({ label: 'My location', lng: pos.coords.longitude, lat: pos.coords.latitude }),
-      () => toast('Couldn’t get your location — search for a starting point or tap 🎯 then the map.', 'warning', 7000),
+      () => toast('Couldn’t get your location — search for a starting point, or tap the map to drop one.', 'warning', 7000),
       { enableHighAccuracy: true, timeout: 10_000 },
     );
   };
@@ -206,7 +214,7 @@ export function NavigatePanel({
         </div>
         {nav.cameraAlert ? (
           <div className="banner" data-tone="danger" role="alert" style={{ borderRadius: 'var(--radius-md)' }}>
-            📷 {nav.cameraAlert}
+            <Icon name="camera" size={16} /> {nav.cameraAlert}
           </div>
         ) : null}
         <div className="navhud-bottom">
@@ -216,7 +224,7 @@ export function NavigatePanel({
           </div>
           <span className="spacer" />
           <button type="button" className="btn btn-icon btn-ghost" aria-pressed={nav.voiceOn} aria-label={nav.voiceOn ? 'Mute voice' : 'Unmute voice'} onClick={() => onVoice(!nav.voiceOn)}>
-            {nav.voiceOn ? '🔊' : '🔇'}
+            {nav.voiceOn ? <Icon name="volume-2" size={18} /> : <Icon name="volume-x" size={18} />}
           </button>
           <button type="button" className="btn btn-danger" onClick={onStop}>
             End
@@ -236,25 +244,25 @@ export function NavigatePanel({
           </span>
         ) : null}
         <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close directions">
-          ✕
+          <Icon name="x" size={18} />
         </button>
       </div>
 
       <div className="filtersheet-body col">
         {nav.phase === 'arrived' ? (
           <div className="banner" data-tone="info" style={{ borderRadius: 'var(--radius-md)' }}>
-            🏁 You arrived. Stay sharp out there.
+            <Icon name="flag" size={16} /> You arrived. Stay sharp out there.
           </div>
         ) : null}
 
-        <EndpointInput placeholder="From — search, paste coords, or 🧭" value={origin} onSelect={setOrigin} onUseMyLocation={useMyLocation} pickLabel="Tap the map to set start" onPickOnMap={() => onPick('origin')} />
+        <EndpointInput placeholder="From — search, paste coordinates, or use my location" value={origin} onSelect={setOrigin} onUseMyLocation={useMyLocation} pickLabel="Tap the map to set start" onPickOnMap={() => onPick('origin')} />
         <EndpointInput placeholder="To — where are you headed?" value={destination} onSelect={setDestination} pickLabel="Tap the map to set destination" onPickOnMap={() => onPick('destination')} />
 
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div className="row" style={{ gap: 6 }} role="radiogroup" aria-label="Travel mode">
             {(['driving', 'walking', 'cycling'] as const).map((m) => (
               <button key={m} type="button" className="chip" aria-pressed={mode === m} onClick={() => setMode(m)}>
-                {m === 'driving' ? '🚗' : m === 'walking' ? '🚶' : '🚲'} {m}
+                {m === 'driving' ? <Icon name="car" size={16} /> : m === 'walking' ? <Icon name="footprints" size={16} /> : <Icon name="bike" size={16} />} {m}
               </button>
             ))}
           </div>
@@ -269,7 +277,7 @@ export function NavigatePanel({
               setDestination(o);
             }}
           >
-            ⇅
+            <Icon name="arrow-up-down" size={18} />
           </button>
         </div>
 
@@ -281,6 +289,24 @@ export function NavigatePanel({
             <span className="text-xs text-secondary">Routes around active LPRs, CCTV and sensors in the database</span>
           </span>
         </label>
+
+        {googleAvailable ? (
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={preferGoogle}
+              onChange={(e) => {
+                setPreferGoogle(e.target.checked);
+                localStorage.setItem('stn.preferGoogle', String(e.target.checked));
+              }}
+            />
+            <span className="text-sm">
+              <strong>Use Google routing</strong>
+              <br />
+              <span className="text-xs text-secondary">Google&rsquo;s directions (best-effort camera avoidance). Off keeps the private, hard-avoidance route.</span>
+            </span>
+          </label>
+        ) : null}
 
         <button type="button" className="btn btn-primary" onClick={onGo} disabled={!origin || !destination || nav.phase === 'routing'}>
           {nav.phase === 'routing' ? 'Routing…' : 'Get route'}
@@ -318,23 +344,23 @@ export function NavigatePanel({
               ) : null}
               {result.warnings.map((w, i) => (
                 <p key={i} className="text-xs text-warning">
-                  ⚠ {w}
+                  <Icon name="alert-triangle" size={14} /> {w}
                 </p>
               ))}
               {result.avoidant ? (
                 <div className="row" style={{ gap: 6 }}>
                   <button type="button" className="chip" aria-pressed={usingAvoidant} onClick={() => onUseRoute('avoidant')}>
-                    🛡 Avoidant
+                    <Icon name="shield" size={16} /> Avoidant
                   </button>
                   <button type="button" className="chip" aria-pressed={!usingAvoidant} onClick={() => onUseRoute('fastest')}>
-                    ⚡ Fastest
+                    <Icon name="zap" size={16} /> Fastest
                   </button>
                 </div>
               ) : null}
             </div>
 
             <button type="button" className="btn btn-primary" onClick={onStart}>
-              ▶ Start navigation
+              <Icon name="play" size={16} /> Start navigation
             </button>
             <div className="row" style={{ gap: 6 }}>
               <a
@@ -350,7 +376,7 @@ export function NavigatePanel({
                 rel="noreferrer"
                 onClick={() => haptics.light()}
               >
-                Google Maps ↗
+                Google Maps <Icon name="external-link" size={14} />
               </a>
               <a
                 className="btn btn-ghost"
@@ -363,7 +389,7 @@ export function NavigatePanel({
                 target="_blank"
                 rel="noreferrer"
               >
-                Apple Maps ↗
+                Apple Maps <Icon name="external-link" size={14} />
               </a>
             </div>
             <p className="text-xs text-secondary">

@@ -19,6 +19,7 @@ import { BASE_STYLES } from '@/map/mapStyle';
 import { get, post, del, ApiError } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 import { TextInput, Select } from '@/components/Form';
 import { haptics } from '@/lib/haptics';
 import { NavigatePanel, type NavEndpoint } from '@/map/NavigatePanel';
@@ -225,20 +226,20 @@ export default function MapPage(): JSX.Element {
             setFiltersOpen(false);
           }}
         >
-          ➤ Directions
+          <Icon name="navigation" size={16} /> Directions
         </button>
         <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
-          ☰ Filters{filters.technologyType.length + filters.status.length > 0 ? ` (${filters.technologyType.length + filters.status.length})` : ''}
+          <Icon name="filter" size={16} /> Filters{filters.technologyType.length + filters.status.length > 0 ? ` (${filters.technologyType.length + filters.status.length})` : ''}
         </button>
         <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setLayersOpen(true)}>
-          ▤ Layers
+          <Icon name="layers" size={16} /> Layers
         </button>
         <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setNearbyOpen(true)}>
-          ◎ Nearby
+          <Icon name="target" size={16} /> Nearby
         </button>
         {user ? (
           <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setPresetsOpen(true)}>
-            ★ Views
+            <Icon name="star" size={16} /> Views
           </button>
         ) : null}
         {user && user.role !== 'viewer' ? (
@@ -324,7 +325,7 @@ export default function MapPage(): JSX.Element {
 
       {!navOpen && nav.state.phase !== 'navigating' ? (
         <button type="button" className="nav-fab" aria-label="Get directions" onClick={() => setNavOpen(true)}>
-          ➤
+          <Icon name="navigation" size={20} />
         </button>
       ) : null}
 
@@ -474,7 +475,7 @@ function AddAssetModal({ location, onClose, onCreated }: { location: { lng: numb
       }
     >
       <p className="text-xs text-secondary mono" style={{ marginBottom: 'var(--space-sm)' }}>
-        📍 {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+        <Icon name="map-pin" size={14} /> {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
       </p>
       <p className="text-xs text-secondary" style={{ marginBottom: 'var(--space-sm)' }}>
         Privacy first: submit only what is observable from public space. Don’t include faces, plates, or personal
@@ -499,7 +500,7 @@ function AddAssetModal({ location, onClose, onCreated }: { location: { lng: numb
         <label htmlFor="add-deploy-date">Deployment date (if known)</label>
         <input id="add-deploy-date" type="date" className="input" value={deploymentDate} onChange={(e) => setDeploymentDate(e.target.value)} />
       </div>
-      <TextInput label="Jurisdiction" value={jurisdictionQuery} onChange={(e) => { setJurisdictionQuery(e.target.value); setJurisdictionId(null); }} placeholder="Start typing a city or county…" hint={jurisdictionId ? '✓ selected' : undefined} />
+      <TextInput label="Jurisdiction" value={jurisdictionQuery} onChange={(e) => { setJurisdictionQuery(e.target.value); setJurisdictionId(null); }} placeholder="Start typing a city or county…" hint={jurisdictionId ? 'selected' : undefined} />
       {jurisdictionQuery.length > 1 && !jurisdictionId && (jurisdictions?.items ?? []).length > 0 ? (
         <div className="col" style={{ gap: 2, marginTop: -8, marginBottom: 'var(--space-sm)' }}>
           {(jurisdictions?.items ?? []).slice(0, 5).map((j) => (
@@ -628,7 +629,7 @@ function PresetsModal({
                 {p.name} {p.workspaceId ? <span className="pill" data-tone="accent">workspace</span> : null}
               </button>
               <button type="button" className="btn btn-sm btn-ghost" onClick={() => void copyShare(p)} aria-label={`Copy share link for ${p.name}`}>
-                🔗
+                <Icon name="link" size={16} />
               </button>
               <button
                 type="button"
@@ -639,7 +640,7 @@ function PresetsModal({
                   void refetch();
                 }}
               >
-                🗑
+                <Icon name="trash" size={16} />
               </button>
             </div>
           ))

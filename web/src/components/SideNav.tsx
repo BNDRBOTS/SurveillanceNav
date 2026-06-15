@@ -24,7 +24,7 @@ export function SideNav(): JSX.Element {
         </NavLink>
       ))}
       <span className="spacer" />
-      <a href="/api/v1/openapi.json" target="_blank" rel="noreferrer" className="text-xs">
+      <a href="/docs" target="_blank" rel="noreferrer" className="text-xs">
         <Icon name="code" size={16} /> API reference
       </a>
     </nav>

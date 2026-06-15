@@ -200,7 +200,8 @@ export const openapiDocument = {
 
     '/geo/search': { get: op('Address/place search (server-proxied geocoding, cached)', { auth: false, tag: 'navigation' }) },
     '/geo/reverse': { get: op('Reverse geocode a coordinate', { auth: false, tag: 'navigation' }) },
-    '/navigation/route': { post: op('Camera-aware routing: avoidant + fastest routes with exposure scoring (engine chain: Valhalla → ORS → OSRM best-effort)', { auth: false, body: true, tag: 'navigation' }) },
+    '/navigation/route': { post: op('Camera-aware routing: avoidant + fastest routes with exposure scoring (engine chain: Valhalla → ORS → OSRM best-effort; optional Google when GOOGLE_MAPS_API_KEY is set)', { auth: false, body: true, tag: 'navigation' }) },
+    '/navigation/config': { get: op('Optional routing capabilities available to the client (e.g. Google routing)', { auth: false, tag: 'navigation' }) },
     '/billing/status': { get: op('Billing configuration + current plan', { auth: false, tag: 'billing' }) },
     '/billing/checkout': { post: op('Start Stripe Checkout (subscription)', { tag: 'billing' }) },
     '/billing/portal': { post: op('Open Stripe customer portal', { tag: 'billing' }) },
@@ -210,3 +211,77 @@ export const openapiDocument = {
     '/health/ready': { get: op('Readiness: DB/cache/storage checks', { auth: false, tag: 'health' }) },
   },
 } as const;
+
+/* --------------------------- rendered reference --------------------------- */
+
+interface DocOp {
+  summary: string;
+  tags?: readonly string[];
+  security?: unknown;
+  requestBody?: unknown;
+}
+
+const METHOD_COLOR: Record<string, string> = {
+  get: '#00e5a8', post: '#4aa8ff', patch: '#ffb454', put: '#ffb454', delete: '#ff5d6c',
+};
+
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+}
+
+const DOC_STYLE =
+  ':root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0a0b0c;color:#e7e9ea;' +
+  'font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:64px}' +
+  'header{padding:32px 24px;border-bottom:1px solid #1f2123;background:#0e0f10}h1{margin:0 0 4px;font-size:24px}' +
+  '.v{color:#9aa0a6;font-size:13px;margin:0 0 12px}.d{color:#c2c7cc;max-width:820px;margin:0 0 14px}' +
+  'a{color:#00e5a8;text-decoration:none}a:hover{text-decoration:underline}main{max-width:940px;margin:0 auto;padding:24px}' +
+  'section{margin:0 0 26px}h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#9aa0a6;' +
+  'border-bottom:1px solid #1f2123;padding-bottom:6px;margin:0 0 8px}ul{list-style:none;margin:0;padding:0}' +
+  'li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 10px;border-radius:8px}li:hover{background:#141618}' +
+  '.m{font-weight:700;font-size:12px;min-width:52px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}' +
+  'code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}' +
+  '.s{color:#9aa0a6;flex:1;min-width:220px;font-size:13px}.tag{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid #2a2d30}' +
+  '.auth{color:#ffb454}.pub{color:#00e5a8}.body{color:#4aa8ff}';
+
+/**
+ * Server-rendered, no-JS HTML reference for the API (renders the OpenAPI spec).
+ * Works under the strict app CSP — inline <style> only, zero scripts — so it
+ * needs no CSP relaxation. Linked from the app nav in place of raw JSON.
+ */
+export function renderDocsHtml(): string {
+  const doc = openapiDocument as unknown as {
+    info: { title: string; version: string; description: string };
+    servers: ReadonlyArray<{ url: string }>;
+    paths: Record<string, Record<string, DocOp>>;
+  };
+  const groups = new Map<string, string[]>();
+  for (const [p, methods] of Object.entries(doc.paths)) {
+    for (const [method, opItem] of Object.entries(methods)) {
+      const tag = opItem.tags?.[0] ?? 'general';
+      const auth = opItem.security
+        ? '<span class="tag auth" title="Requires authentication">auth</span>'
+        : '<span class="tag pub" title="Public">public</span>';
+      const body = opItem.requestBody ? '<span class="tag body">body</span>' : '';
+      const row =
+        `<li><span class="m" style="color:${METHOD_COLOR[method] ?? '#aaa'}">${esc(method.toUpperCase())}</span>` +
+        `<code>${esc(p)}</code><span class="s">${esc(opItem.summary)}</span>${auth}${body}</li>`;
+      const list = groups.get(tag) ?? [];
+      list.push(row);
+      groups.set(tag, list);
+    }
+  }
+  const sections = [...groups.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([tag, rows]) => `<section><h2>${esc(tag)}</h2><ul>${rows.join('')}</ul></section>`)
+    .join('');
+  return (
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width, initial-scale=1">` +
+    `<title>${esc(doc.info.title)} — API reference</title><style>${DOC_STYLE}</style></head><body>` +
+    `<header><h1>${esc(doc.info.title)}</h1>` +
+    `<p class="v">v${esc(doc.info.version)} · OpenAPI 3.1 · base <code>${esc(doc.servers[0]!.url)}</code></p>` +
+    `<p class="d">${esc(doc.info.description)}</p>` +
+    `<p><a href="/api/v1/openapi.json">Raw OpenAPI JSON</a> · <a href="/map">Back to app</a></p></header>` +
+    `<main>${sections}</main></body></html>`
+  );
+}

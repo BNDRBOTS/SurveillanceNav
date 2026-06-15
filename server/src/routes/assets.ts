@@ -135,8 +135,8 @@ async function clusteredResponse(q: ReturnType<typeof listAssetsQuery.parse>, fi
     tech: Record<string, number>;
   }>(
     `SELECT
-       (floor(a.lng / ${cellDeg}) * ${cellDeg} + ${cellDeg / 2})::float8 AS glng,
-       (floor(a.lat / ${cellDeg}) * ${cellDeg} + ${cellDeg / 2})::float8 AS glat,
+       avg(a.lng)::float8 AS glng,
+       avg(a.lat)::float8 AS glat,
        count(*)::int AS count,
        jsonb_object_agg(t.technology_type, t.n) AS tech
      FROM surveillance_assets a
@@ -146,7 +146,7 @@ async function clusteredResponse(q: ReturnType<typeof listAssetsQuery.parse>, fi
        SELECT a.technology_type, 1 AS n
      ) t
      WHERE ${filters.where}
-     GROUP BY 1, 2
+     GROUP BY floor(a.lng / ${cellDeg}), floor(a.lat / ${cellDeg})
      ORDER BY count DESC
      LIMIT 4000`,
     filters.params,

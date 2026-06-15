@@ -329,6 +329,69 @@ async function routeOsrm(
   }));
 }
 
+const GOOGLE_MODE: Record<TravelMode, string> = { driving: 'driving', walking: 'walking', cycling: 'bicycling' };
+
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+interface GoogleRoute {
+  overview_polyline: { points: string };
+  legs: Array<{
+    distance: { value: number };
+    duration: { value: number };
+    steps: Array<{
+      html_instructions: string;
+      distance: { value: number };
+      duration: { value: number };
+      start_location: { lat: number; lng: number };
+    }>;
+  }>;
+}
+
+/**
+ * Optional, opt-in engine: Google Directions (needs GOOGLE_MAPS_API_KEY). Google
+ * has no polygon exclusion, so avoidance is best-effort via alternatives — the
+ * default engines keep hard avoidance.
+ */
+async function routeGoogle(
+  apiKey: string,
+  origin: RoutePoint,
+  destination: RoutePoint,
+  mode: TravelMode,
+  alternatives: boolean,
+): Promise<Array<Omit<ComputedRoute, 'exposure'>>> {
+  const url =
+    `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}` +
+    `&destination=${destination.lat},${destination.lng}&mode=${GOOGLE_MODE[mode]}` +
+    `&alternatives=${alternatives ? 'true' : 'false'}&key=${encodeURIComponent(apiKey)}`;
+  const data = (await fetchJson(url)) as { status: string; routes: GoogleRoute[]; error_message?: string };
+  if (data.status !== 'OK' || data.routes.length === 0) {
+    throw new Error(`Google: ${data.status}${data.error_message ? ` (${data.error_message})` : ''}`);
+  }
+  return data.routes.map((r) => {
+    const geometry = decodePolyline(r.overview_polyline.points, 5); // Google uses polyline5
+    const leg = r.legs[0]!;
+    return {
+      geometry,
+      distanceM: leg.distance.value,
+      durationS: leg.duration.value,
+      steps: leg.steps.map((s) => ({
+        instruction: stripHtml(s.html_instructions),
+        distanceM: s.distance.value,
+        durationS: s.duration.value,
+        lng: s.start_location.lng,
+        lat: s.start_location.lat,
+      })),
+    };
+  });
+}
+
+/** Whether the optional Google Directions engine is configured. */
+export function googleRoutingAvailable(): boolean {
+  return Boolean(config.routing.googleApiKey);
+}
+
 /* ------------------------------ orchestrator ------------------------------ */
 
 export function activeEngine(): { name: string; hardAvoidance: boolean } {
@@ -346,6 +409,7 @@ export async function computeRoute(
   destination: RoutePoint,
   mode: TravelMode,
   avoid: { enabled: boolean; minConfidence: number; bufferMeters: number; technologyType?: string[] },
+  preferGoogle = false,
 ): Promise<RouteResult> {
   const warnings: string[] = [];
   const cameras = avoid.enabled
@@ -374,6 +438,27 @@ export async function computeRoute(
     camerasConsidered: cameras.length,
     warnings,
   });
+
+  // 0 · Google Directions (opt-in; best-effort avoidance via alternatives)
+  if (preferGoogle && config.routing.googleApiKey) {
+    try {
+      const routes = await routeGoogle(config.routing.googleApiKey, origin, destination, mode, avoid.enabled);
+      const fastest = routes[0]!;
+      if (!avoid.enabled || routes.length === 1) {
+        if (avoid.enabled) {
+          warnings.push('Google route shown with camera exposure marked; use the default engine for guaranteed hard avoidance.');
+        }
+        return finish('google', avoid.enabled ? 'best-effort' : 'off', fastest, null);
+      }
+      const scored = routes.map((r) => ({ r, exp: scoreExposure(r.geometry, cameras, avoid.bufferMeters).count }));
+      scored.sort((a, b) => a.exp - b.exp || a.r.durationS - b.r.durationS);
+      const best = scored[0]!.r;
+      warnings.push('Google route: best-effort avoidance (lowest-exposure alternative). The default engine offers guaranteed hard avoidance.');
+      return finish('google', 'best-effort', fastest, best === fastest ? null : best);
+    } catch (err) {
+      warnings.push(`Google routing failed (${(err as Error).message.slice(0, 80)}); using the default engine.`);
+    }
+  }
 
   // 1 · Valhalla
   if (config.routing.valhallaUrl) {

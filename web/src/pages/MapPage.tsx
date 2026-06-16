@@ -253,7 +253,7 @@ export default function MapPage(): JSX.Element {
             }}
             aria-pressed={addMode}
           >
-            ＋ Add asset
+            <Icon name="plus" size={16} /> Add asset
           </button>
         ) : null}
         <select

@@ -422,6 +422,12 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 
 .auth-layout { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-lg); }
 .auth-card { width: 100%; max-width: 420px; }
+/* settings/dashboard grid — independent cards tile instead of stacking,
+   halving page height on desktop and removing the needless vertical scroll */
+.settings-grid { display: grid; gap: var(--space-md); }
+@media (min-width: 760px) {
+  .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+}
 .stat-card { display: flex; flex-direction: column; gap: var(--space-xxs); }
 .stat-card .stat-value { font-size: var(--font-size-xl); line-height: var(--line-height-xl); font-weight: var(--font-weight-bold); letter-spacing: -0.02em; }
 

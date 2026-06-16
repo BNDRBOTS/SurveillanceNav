@@ -58,11 +58,11 @@ export default function SettingsPage(): JSX.Element {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <div className="page" style={{ maxWidth: 880 }}>
       <div className="page-header">
         <h1>Settings & privacy</h1>
       </div>
-      <div className="col">
+      <div className="settings-grid">
         <div className="card col">
           <h2>Profile</h2>
           <TextInput label="Name" value={name} onChange={(e) => setName(e.target.value)} />

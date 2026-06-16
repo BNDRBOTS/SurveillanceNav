@@ -12,7 +12,7 @@ import { ConfirmDialog, Modal } from '@/components/Modal';
 import { TextArea } from '@/components/Form';
 import { useDebounce } from '@/lib/useDebounce';
 
-const TABS = ['overview', 'users', 'curation', 'jobs', 'audit', 'settings'] as const;
+const TABS = ['overview', 'users', 'curation', 'jobs', 'audit', 'feedback', 'settings'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage(): JSX.Element {
@@ -45,6 +45,7 @@ export default function AdminPage(): JSX.Element {
       {tab === 'curation' ? <CurationTab /> : null}
       {tab === 'jobs' ? <JobsTab /> : null}
       {tab === 'audit' ? <AuditTab /> : null}
+      {tab === 'feedback' ? <FeedbackTab /> : null}
       {tab === 'settings' ? <SettingsTab /> : null}
     </div>
   );
@@ -714,6 +715,142 @@ function SettingsTab(): JSX.Element {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ------------------------------ feedback ------------------------------ */
+
+interface FeedbackRow {
+  id: string;
+  category: string;
+  subject: string;
+  body: string;
+  pageUrl: string | null;
+  status: string;
+  adminNote: string | null;
+  createdAt: string;
+  userEmail: string | null;
+  userName: string | null;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  open:      'var(--color-accent)',
+  reviewed:  'var(--color-warning)',
+  resolved:  'var(--color-success)',
+  wont_fix:  'var(--color-text-secondary)',
+};
+
+function FeedbackTab(): JSX.Element {
+  const toast = useStore((s) => s.toast);
+  const qc = useQueryClient();
+  const [filterStatus, setFilterStatus] = useState('open');
+  const [selected, setSelected] = useState<FeedbackRow | null>(null);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['admin-feedback', filterStatus],
+    queryFn: () => get<Paginated<FeedbackRow>>(`/admin/feedback?status=${filterStatus}`),
+  });
+
+  async function updateItem(id: string, update: { status?: string; adminNote?: string }) {
+    setSaving(true);
+    try {
+      await patch(`/admin/feedback/${id}`, update);
+      toast('Updated.', 'success');
+      setSelected(null);
+      void qc.invalidateQueries({ queryKey: ['admin-feedback'] });
+    } catch (err) {
+      toast((err as Error).message, 'error', 6000);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (isLoading) return <Skeleton count={6} height={48} />;
+  if (error) return <ErrorState message={(error as Error).message} onRetry={() => void refetch()} />;
+
+  return (
+    <div className="col">
+      {/* status filter */}
+      <div className="row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+        {['open', 'reviewed', 'resolved', 'wont_fix'].map((s) => (
+          <button
+            key={s}
+            type="button"
+            className="chip"
+            aria-pressed={filterStatus === s}
+            onClick={() => setFilterStatus(s)}
+            style={{ borderColor: filterStatus === s ? STATUS_COLORS[s] : undefined, color: filterStatus === s ? STATUS_COLORS[s] : undefined }}
+          >
+            {s.replace('_', ' ')}
+          </button>
+        ))}
+      </div>
+
+      {!data?.items.length ? (
+        <EmptyState title="No submissions" hint={`No feedback with status "${filterStatus}".`} />
+      ) : (
+        <DataTable<FeedbackRow>
+          ariaLabel="Feedback submissions"
+          rows={data.items}
+          rowKey={(r) => r.id}
+          columns={[
+            { key: 'category',  label: 'Type',    sortable: true, render: (r) => <span style={{ textTransform: 'capitalize' }}>{r.category}</span> },
+            { key: 'subject',   label: 'Subject',  sortable: true, render: (r) => r.subject },
+            { key: 'userEmail', label: 'From',     render: (r) => r.userEmail ?? '—' },
+            { key: 'createdAt', label: 'Date',     sortable: true, sortValue: (r) => r.createdAt, render: (r) => fmtRelative(r.createdAt) },
+            { key: 'status',    label: 'Status',   render: (r) => (
+              <span style={{ color: STATUS_COLORS[r.status], fontWeight: 'var(--font-weight-medium)', textTransform: 'capitalize' }}>
+                {r.status.replace('_', ' ')}
+              </span>
+            )},
+            { key: 'actions',   label: '',        render: (r) => (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSelected(r); setNote(r.adminNote ?? ''); }}>
+                Review
+              </button>
+            )},
+          ]}
+        />
+      )}
+
+      {selected && (
+        <Modal title={selected.subject} onClose={() => setSelected(null)}>
+          <div className="col" style={{ gap: 'var(--space-sm)', maxWidth: 540 }}>
+            <div style={{ display: 'flex', gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+              <span className="chip">{selected.category}</span>
+              {selected.userEmail && <span className="chip">{selected.userEmail}</span>}
+              <span className="chip">{fmtDateTime(selected.createdAt)}</span>
+            </div>
+            <p className="text-sm" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{selected.body}</p>
+            {selected.pageUrl && (
+              <p className="text-xs text-secondary">Page: {selected.pageUrl}</p>
+            )}
+            <label className="col" style={{ gap: 4 }}>
+              <span className="text-xs text-secondary" style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin note</span>
+              <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} style={{ resize: 'vertical' }} />
+            </label>
+            <div className="row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+              {['reviewed', 'resolved', 'wont_fix'].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  disabled={saving}
+                  style={{ color: STATUS_COLORS[s], borderColor: STATUS_COLORS[s] }}
+                  onClick={() => void updateItem(selected.id, { status: s, adminNote: note })}
+                >
+                  Mark {s.replace('_', ' ')}
+                </button>
+              ))}
+              <button type="button" className="btn btn-primary btn-sm" disabled={saving} onClick={() => void updateItem(selected.id, { adminNote: note })}>
+                Save note
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

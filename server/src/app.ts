@@ -27,6 +27,7 @@ import { registerAdminRoutes } from './routes/admin.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerNavigationRoutes } from './routes/navigation.js';
 import { registerBillingRoutes } from './routes/billing.js';
+import { registerFeedbackRoutes } from './routes/feedback.js';
 import { openapiDocument, renderDocsHtml } from './openapi.js';
 import { API_PREFIX } from '@stn/shared';
 
@@ -75,6 +76,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       registerAdminRoutes(api);
       registerNavigationRoutes(api);
       registerBillingRoutes(api);
+      registerFeedbackRoutes(api);
       registerHealthRoutes(api);
       api.get('/openapi.json', async () => openapiDocument);
     },

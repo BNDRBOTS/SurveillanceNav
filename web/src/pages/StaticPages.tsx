@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Modal } from '@/components/Modal';
 
 export function PrivacyPage(): JSX.Element {
@@ -16,11 +16,11 @@ export function PrivacyPage(): JSX.Element {
             <dt>Email + name</dt>
             <dd>Sign-in, workspace invitations, and deadline reminders. A pseudonym is fine.</dd>
             <dt>Password</dt>
-            <dd>Stored only as an scrypt hash — we cannot read it.</dd>
+            <dd>Stored only as an scrypt hash -- we cannot read it.</dd>
             <dt>Consent choices</dt>
             <dd>Recorded with timestamps so you can verify what you agreed to.</dd>
             <dt>Contributions</dt>
-            <dd>Map records, evidence, disputes, comments — attributed to you until you delete your account.</dd>
+            <dd>Map records, evidence, disputes, comments -- attributed to you until you delete your account.</dd>
             <dt>Security logs</dt>
             <dd>Sign-ins and data changes (with IP) in an append-only audit trail to protect data integrity.</dd>
           </dl>
@@ -41,22 +41,22 @@ export function PrivacyPage(): JSX.Element {
             <dt>Offline caches</dt>
             <dd>On your device only; clearable in Settings; integrity-checked on restore.</dd>
           </dl>
-          <p className="text-sm text-secondary">Retention is enforced by an automatic daily job — not by promises.</p>
+          <p className="text-sm text-secondary">Retention is enforced by an automatic daily job -- not by promises.</p>
         </div>
         <div className="card col">
           <h2>Your rights (GDPR / CCPA-ready)</h2>
           <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)' }}>
             <li>
-              <strong>Access / portability</strong> — download everything from <Link to="/settings">Settings → Download my data</Link>.
+              <strong>Access / portability</strong> -- download everything from <Link to="/settings">Settings &rarr; Download my data</Link>.
             </li>
             <li>
-              <strong>Deletion</strong> — one click in Settings; contributions are de-attributed, not silently rewritten.
+              <strong>Deletion</strong> -- one click in Settings; contributions are de-attributed, not silently rewritten.
             </li>
             <li>
-              <strong>Rectification</strong> — edit your profile anytime; dispute any record about a place.
+              <strong>Rectification</strong> -- edit your profile anytime; dispute any record about a place.
             </li>
             <li>
-              <strong>No dark patterns</strong> — every consent is opt-in and revocable.
+              <strong>No dark patterns</strong> -- every consent is opt-in and revocable.
             </li>
           </ul>
         </div>
@@ -84,7 +84,7 @@ export function TermsPage(): JSX.Element {
         <div className="card col">
           <h2>What this platform is for</h2>
           <p className="text-sm text-secondary">
-            Lens of Light is a public-interest tool for mapping and understanding surveillance <em>infrastructure</em> —
+            Lens of Light is a public-interest tool for mapping and understanding surveillance <em>infrastructure</em> --
             cameras, license plate readers, and similar systems in public space. Use it for journalism, research,
             advocacy, oversight, and personal awareness.
           </p>
@@ -92,7 +92,7 @@ export function TermsPage(): JSX.Element {
         <div className="card col">
           <h2>Acceptable use</h2>
           <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)' }}>
-            <li>Document <strong>infrastructure, not people</strong> — no faces, license plates, home interiors, or personal information.</li>
+            <li>Document <strong>infrastructure, not people</strong> -- no faces, license plates, home interiors, or personal information.</li>
             <li>No harassment, stalking, doxxing, or targeting of individuals, including equipment operators.</li>
             <li>Contribute only observations from <strong>public space</strong> that you have the right to share.</li>
             <li>Follow the law in your jurisdiction; never use the platform to facilitate harm or illegal activity.</li>
@@ -105,7 +105,7 @@ export function TermsPage(): JSX.Element {
           <p className="text-sm text-secondary">
             Data here is community-sourced and partly <strong>imported from open datasets</strong> (e.g. De-Flock /
             OpenStreetMap). It can be incomplete, out of date, or wrong, and confidence scores are estimates, not
-            guarantees. The platform is provided <strong>&ldquo;as is,&rdquo; without warranties</strong> — verify
+            guarantees. The platform is provided <strong>&ldquo;as is,&rdquo; without warranties</strong> -- verify
             anything important independently. Nothing here is legal advice.
           </p>
         </div>
@@ -114,7 +114,7 @@ export function TermsPage(): JSX.Element {
           <p className="text-sm text-secondary">
             You keep ownership of what you submit. You confirm you have the right to share it and grant us a
             non-exclusive license to host, display, and distribute it as part of the public record (including in exports).
-            Imported open data keeps its original license — OpenStreetMap-derived records are © OpenStreetMap contributors
+            Imported open data keeps its original license -- OpenStreetMap-derived records are © OpenStreetMap contributors
             under the ODbL. Records stay attributed to you until you delete your account, after which they are
             de-attributed, not erased from the public record.
           </p>
@@ -144,20 +144,55 @@ const SUPPORT_LINKS = {
   substack: 'https://substack.com/@bndrllc',
 };
 
+type FeedbackState = 'idle' | 'sending' | 'sent' | 'error';
+
 export function SupportPage(): JSX.Element {
+  const [category, setCategory] = useState<string>('suggestion');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [fbState, setFbState] = useState<FeedbackState>('idle');
+  const [errMsg, setErrMsg] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFbState('sending');
+    setErrMsg('');
+    try {
+      const res = await fetch('/api/v1/feedback', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, subject: subject.trim(), body: body.trim(), pageUrl: window.location.href }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error((j as { message?: string }).message ?? `HTTP ${res.status}`);
+      }
+      setFbState('sent');
+      setSubject('');
+      setBody('');
+      setCategory('suggestion');
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : 'Unknown error');
+      setFbState('error');
+    }
+  }
+
   return (
     <div className="page" style={{ maxWidth: 760 }}>
       <h1>Support Lens of Light</h1>
       <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
-        The map, navigation, and FOIA tools are free to use. The project runs on donations right now — if it’s
-        useful to you, chipping in keeps the servers on and the data flowing.
+        The map, navigation, and FOIA tools are free. The project runs on donations -- if it's useful to you,
+        chipping in keeps the servers on and the data flowing.
       </p>
+
       <div className="col">
+        {/* ── Donate ─────────────────────────────────────────────── */}
         <div className="card col">
           <h2>Donate</h2>
           <p className="text-sm text-secondary">
-            Donations are the only support right now — no paywalls, no locked features. What comes in goes to hosting,
-            data imports, and FOIA costs.
+            No paywalls, no locked features. What comes in goes to hosting, data imports, and FOIA filing costs.
           </p>
           <a
             className="btn btn-primary"
@@ -168,9 +203,10 @@ export function SupportPage(): JSX.Element {
           >
             Support the project
           </a>
-          <p className="text-xs text-secondary">Secure checkout handled entirely by Stripe — we never see your card.</p>
+          <p className="text-xs text-secondary">Secure checkout by Stripe -- we never see your card.</p>
         </div>
 
+        {/* ── Substack ───────────────────────────────────────────── */}
         <div className="card col">
           <h2>Read &amp; follow</h2>
           <p className="text-sm text-secondary">Research, write-ups, and project updates are published on Substack.</p>
@@ -185,25 +221,95 @@ export function SupportPage(): JSX.Element {
           </a>
         </div>
 
+        {/* ── In-app feedback form ────────────────────────────────── */}
         <div className="card col">
-          <h2>Suggestions &amp; corrections</h2>
+          <h2>Send feedback</h2>
           <p className="text-sm text-secondary">
-            Spotted something wrong on the map, or have an idea to make this better? This is a best-effort project and
-            improvements get made as they come in.
+            Bug report, data correction, or feature idea -- goes directly to the project. Map-record disputes go{' '}
+            <Link to="/map">on the map</Link> using the Dispute button.
           </p>
-          <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)' }}>
-            <li>
-              <strong>A specific record looks wrong</strong> — open it on the <Link to="/map">map</Link> and use{' '}
-              <strong>Dispute</strong>. Curators must respond, and the resolution becomes permanent public history.
-            </li>
-            <li>
-              <strong>General feedback or feature ideas</strong> — reach out via{' '}
-              <a href={SUPPORT_LINKS.substack} target="_blank" rel="noopener noreferrer">
-                Substack
-              </a>
-              .
-            </li>
-          </ul>
+
+          {fbState === 'sent' ? (
+            <div
+              style={{
+                padding: 'var(--space-md)',
+                background: 'var(--color-accent-dim)',
+                borderLeft: 'var(--rail-width) solid var(--color-accent)',
+              }}
+            >
+              <p className="text-sm" style={{ color: 'var(--color-accent)', fontWeight: 'var(--font-weight-medium)' }}>
+                Received -- thank you.
+              </p>
+              <p className="text-xs text-secondary" style={{ marginTop: 4 }}>
+                Every submission is read. No auto-reply is sent.
+              </p>
+              <button
+                className="btn btn-ghost"
+                style={{ marginTop: 'var(--space-sm)', alignSelf: 'flex-start' }}
+                onClick={() => setFbState('idle')}
+              >
+                Send another
+              </button>
+            </div>
+          ) : (
+            <form ref={formRef} className="col" style={{ gap: 'var(--space-sm)' }} onSubmit={handleSubmit}>
+              {/* category selector */}
+              <div className="row" style={{ gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+                {(['bug', 'suggestion', 'correction', 'other'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`btn btn-ghost${category === c ? ' btn-ghost--active' : ''}`}
+                    style={{
+                      fontSize: 'var(--font-size-xs)',
+                      padding: '4px 12px',
+                      borderColor: category === c ? 'var(--color-accent)' : undefined,
+                      color: category === c ? 'var(--color-accent)' : undefined,
+                    }}
+                    onClick={() => setCategory(c)}
+                  >
+                    {c === 'bug' ? 'Bug' : c === 'suggestion' ? 'Suggestion' : c === 'correction' ? 'Data correction' : 'Other'}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                className="input"
+                type="text"
+                placeholder="Subject (max 120 chars)"
+                maxLength={120}
+                required
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+
+              <textarea
+                className="input"
+                placeholder="Tell us what you found or what you'd like to see..."
+                rows={5}
+                maxLength={4000}
+                required
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                style={{ resize: 'vertical', minHeight: 100 }}
+              />
+
+              {fbState === 'error' && (
+                <p className="text-xs" style={{ color: 'var(--color-danger)' }}>
+                  {errMsg || 'Something went wrong -- try again.'}
+                </p>
+              )}
+
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={fbState === 'sending'}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {fbState === 'sending' ? 'Sending...' : 'Send feedback'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
@@ -215,7 +321,7 @@ export function NotFoundPage(): JSX.Element {
     <div className="auth-layout">
       <div className="card auth-card col" style={{ textAlign: 'center' }}>
         <h1>404</h1>
-        <p className="text-sm text-secondary">That page doesn’t exist — maybe it was redacted.</p>
+        <p className="text-sm text-secondary">That page doesn't exist -- maybe it was redacted.</p>
         <Link className="btn btn-primary" to="/map">
           Back to the map
         </Link>
@@ -239,7 +345,7 @@ const TOUR_STEPS = [
   },
   {
     title: 'Trust, verified',
-    body: 'Confidence scores are explainable — tap any score to see exactly why. Disagree with a record? Dispute it with evidence; curators must respond, and the resolution is permanent public history.',
+    body: 'Confidence scores are explainable -- tap any score to see exactly why. Disagree with a record? Dispute it with evidence; curators must respond, and the resolution is permanent public history.',
   },
   {
     title: 'Works offline',

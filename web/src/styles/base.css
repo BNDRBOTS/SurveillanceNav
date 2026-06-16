@@ -99,13 +99,15 @@ textarea.input { resize: vertical; min-height: 96px; }
 
 /* ---------------- surfaces ---------------- */
 .card {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
   box-shadow: var(--shadow-1);
 }
-.panel { background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.panel { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); }
 
 /* ---------------- badges & pills ---------------- */
 .pill {
@@ -191,8 +193,10 @@ textarea.input { resize: vertical; min-height: 96px; }
   animation: fade-in var(--motion-duration-med) var(--motion-ease);
 }
 .modal {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
   width: 100%; max-width: 520px; max-height: 86dvh;
@@ -214,8 +218,10 @@ textarea.input { resize: vertical; min-height: 96px; }
 .drawer {
   position: fixed; top: var(--topbar-h); right: 0; bottom: 0; z-index: var(--z-overlay);
   width: min(440px, 100vw);
-  background: var(--color-bg-secondary);
-  border-left: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--glass-border);
   box-shadow: var(--shadow-3);
   display: flex; flex-direction: column;
   animation: drawer-in var(--motion-duration-med) var(--motion-ease);
@@ -361,7 +367,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .menu {
   position: absolute; z-index: var(--z-tooltip);
   min-width: 220px; max-height: 70dvh; overflow: auto;
-  background: var(--color-bg-tertiary); border: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md); box-shadow: var(--shadow-3);
   padding: var(--space-xxs);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease);
@@ -392,10 +399,35 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .timeline-item::before { content: ""; position: absolute; left: calc(-1 * var(--space-lg) + 2px); top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--color-accent); border: 2px solid var(--color-bg-primary); }
 .progressbar { height: 6px; border-radius: var(--radius-full); background: var(--color-border); overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bell-ring {
+  0%,100% { transform: rotate(0deg); }
+  10%      { transform: rotate(14deg); }
+  20%      { transform: rotate(-12deg); }
+  30%      { transform: rotate(10deg); }
+  40%      { transform: rotate(-8deg); }
+  50%      { transform: rotate(6deg); }
+  60%      { transform: rotate(-4deg); }
+}
+.bell-has-unread { animation: bell-ring 2.8s ease 1s 1; transform-origin: top center; }
+.bell-badge {
+  position: absolute; top: 2px; right: 0;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent); color: var(--color-accent-ink);
+  font-size: 10px; font-weight: 700; line-height: 18px; text-align: center;
+  box-shadow: var(--glow-accent-soft);
+  pointer-events: none;
+}
 .progressbar > div { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width var(--motion-duration-med) var(--motion-ease); }
 
 .auth-layout { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-lg); }
 .auth-card { width: 100%; max-width: 420px; }
+/* settings/dashboard grid — independent cards tile instead of stacking,
+   halving page height on desktop and removing the needless vertical scroll */
+.settings-grid { display: grid; gap: var(--space-md); }
+@media (min-width: 760px) {
+  .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+}
 .stat-card { display: flex; flex-direction: column; gap: var(--space-xxs); }
 .stat-card .stat-value { font-size: var(--font-size-xl); line-height: var(--line-height-xl); font-weight: var(--font-weight-bold); letter-spacing: -0.02em; }
 
@@ -410,58 +442,12 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .dropzone[data-active="true"], .dropzone:hover { border-color: var(--color-accent); background: rgba(0, 229, 168, 0.05); }
 
 /* ====================================================================== *
- * Split-surface system: void chrome / bone paper content canvas.
- * Content pages (.page) re-scope the structural tokens to a warm paper
- * palette; map, chrome, drawers and modals stay void. Falls back to the
- * dark system in browsers without :has() and in high-contrast mode.
+ * Dark glass system — all surfaces (map chrome AND content pages) run on
+ * the void palette. Cards/modals/menus are frosted glass by default above.
+ * No light-paper re-scope; color-scheme stays dark throughout.
  * ====================================================================== */
-.main:has(.page) {
-  --color-bg-primary: #EDEAE3;
-  --color-bg-secondary: #F4F2EC;
-  --color-bg-tertiary: #FBFAF7;
-  --color-text-primary: #16171A;
-  --color-text-secondary: #5B6066;
-  --color-border: #D7D3C8;
-  --color-border-strong: #7C7868;
-  --color-bg-hover: #E6E2D7;
-  --color-accent: #006F55;
-  --color-accent-strong: #005A45;
-  --color-accent-ink: #F4F4F2;
-  --color-danger: #C2342C;
-  --color-warning: #8A5A00;
-  --color-success: #1B6E3C;
-  --color-focus-ring: #006F55;
-  --color-scrim: rgba(20, 21, 23, 0.4);
-  --shadow-1: 0 2px 8px rgba(24, 22, 18, 0.10);
-  --shadow-2: 0 6px 20px rgba(24, 22, 18, 0.14);
-  --shadow-3: 0 12px 40px rgba(24, 22, 18, 0.20);
-  --glow-accent: 0 0 0 1px rgba(0, 111, 85, 0.3);
-  --glow-accent-soft: none;
-  --glow-danger: none;
-  --gloss-edge: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  color-scheme: light;
-}
-:root[data-contrast="high"] .main:has(.page) {
-  --color-bg-primary: #000;
-  --color-bg-secondary: #000;
-  --color-bg-tertiary: #0a0a0a;
-  --color-text-primary: #FFF;
-  --color-text-secondary: #e8e8e8;
-  --color-accent: #FFFF00;
-  --color-accent-strong: #e6e600;
-  --color-accent-ink: #000;
-  --color-danger: #FF4D4D;
-  --color-warning: #FFB347;
-  --color-success: #4ADE80;
-  --color-border: #888;
-  --color-focus-ring: #FFFF00;
-  --color-bg-hover: #1c1c1c;
-  --color-scrim: rgba(0, 0, 0, 0.72);
-  --gloss-edge: none;
-  color-scheme: dark;
-}
+
+/* page content inherits the void tokens; no overrides needed */
 
 /* ---------------- glow & gloss application (function + style) -------- */
 .btn-primary { box-shadow: var(--glow-accent-soft); }
@@ -501,14 +487,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
   color: var(--color-accent);
 }
 
-/* paper-scope component recalibration */
-.main:has(.page) .table th { background: #16171A; color: #C9CCCF; }
-.main:has(.page) .skeleton {
-  background: linear-gradient(100deg, #E3DFD4 40%, #EFECE4 50%, #E3DFD4 60%);
-  background-size: 200% 100%;
-}
-.main:has(.page) .banner[data-tone="info"] { background: rgba(0, 111, 85, 0.08); }
-.main:has(.page) .input:focus { box-shadow: 0 0 0 3px rgba(0, 111, 85, 0.18); }
+/* table header stays dark even on page context */
+.main:has(.page) .table th { background: var(--color-bg-secondary); color: var(--color-text-secondary); }
 
 /* mobile: collapse non-essential topbar chrome to keep the header clean */
 @media (max-width: 840px) {

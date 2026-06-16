@@ -49,7 +49,7 @@ export function FoiaListPage(): JSX.Element {
           <p className="text-sm text-secondary">Public records requests with statutory deadlines, documents, and outcomes.</p>
         </div>
         <Link to="/foia/new" className="btn btn-primary">
-          ＋ New request
+          <Icon name="plus" size={16} /> New request
         </Link>
       </div>
 

@@ -134,20 +134,34 @@ async function clusteredResponse(q: ReturnType<typeof listAssetsQuery.parse>, fi
     count: number;
     tech: Record<string, number>;
   }>(
-    `SELECT
-       (floor(a.lng / ${cellDeg}) * ${cellDeg} + ${cellDeg / 2})::float8 AS glng,
-       (floor(a.lat / ${cellDeg}) * ${cellDeg} + ${cellDeg / 2})::float8 AS glat,
-       count(*)::int AS count,
-       jsonb_object_agg(t.technology_type, t.n) AS tech
-     FROM surveillance_assets a
-     LEFT JOIN jurisdictions j ON j.id = a.jurisdiction_id
-     LEFT JOIN sources s ON s.id = a.source_id
-     CROSS JOIN LATERAL (
-       SELECT a.technology_type, 1 AS n
-     ) t
-     WHERE ${filters.where}
-     GROUP BY 1, 2
-     ORDER BY count DESC
+    `WITH pts AS (
+       SELECT
+         a.lng, a.lat, a.technology_type,
+         floor(a.lng / ${cellDeg}) AS gx,
+         floor(a.lat / ${cellDeg}) AS gy
+       FROM surveillance_assets a
+       LEFT JOIN jurisdictions j ON j.id = a.jurisdiction_id
+       LEFT JOIN sources s ON s.id = a.source_id
+       WHERE ${filters.where}
+     ),
+     cells AS (
+       SELECT gx, gy,
+              count(*)::int AS count,
+              avg(lng) AS cx,
+              avg(lat) AS cy,
+              jsonb_object_agg(technology_type, 1) AS tech
+       FROM pts
+       GROUP BY gx, gy
+     )
+     SELECT DISTINCT ON (p.gx, p.gy)
+       p.lng::float8 AS glng,
+       p.lat::float8 AS glat,
+       c.count,
+       c.tech
+     FROM pts p
+     JOIN cells c ON c.gx = p.gx AND c.gy = p.gy
+     ORDER BY p.gx, p.gy,
+              (p.lng - c.cx)^2 + (p.lat - c.cy)^2
      LIMIT 4000`,
     filters.params,
   );

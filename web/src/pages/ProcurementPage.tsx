@@ -38,7 +38,7 @@ export default function ProcurementPage(): JSX.Element {
         </div>
         {user && user.role !== 'viewer' ? (
           <button type="button" className="btn btn-primary" onClick={() => setParseOpen(true)}>
-            ＋ Parse document
+            <Icon name="plus" size={16} /> Parse document
           </button>
         ) : null}
       </div>

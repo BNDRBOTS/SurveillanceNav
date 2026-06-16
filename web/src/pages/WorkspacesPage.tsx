@@ -8,6 +8,7 @@ import { fmtDate } from '@/lib/format';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { TextInput, Select } from '@/components/Form';
+import { Icon } from '@/components/Icon';
 
 export function WorkspacesPage(): JSX.Element {
   const user = useStore((s) => s.user);
@@ -42,7 +43,7 @@ export function WorkspacesPage(): JSX.Element {
           <p className="text-sm text-secondary">Collaborate with viewer / editor / admin roles. Access is deny-by-default across workspaces.</p>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>
-          ＋ New workspace
+          <Icon name="plus" size={16} /> New workspace
         </button>
       </div>
 

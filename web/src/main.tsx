@@ -17,7 +17,7 @@ import {
 import { LoginPage, SignupPage, ResetPasswordPage, MfaSetupPage, InvitePage } from '@/pages/AuthPages';
 import { FoiaListPage, FoiaNewPage, FoiaDetailPage } from '@/pages/FoiaPages';
 import { WorkspacesPage, WorkspaceDetailPage } from '@/pages/WorkspacesPage';
-import { PrivacyPage, TermsPage, NotFoundPage, OnboardingPage } from '@/pages/StaticPages';
+import { PrivacyPage, TermsPage, SupportPage, NotFoundPage, OnboardingPage } from '@/pages/StaticPages';
 import { bootstrapSession, installSessionListeners, syncOutbox } from '@/lib/auth';
 import { applyPersistedAppearance } from '@/lib/store';
 
@@ -53,6 +53,7 @@ const router = createBrowserRouter([
       { path: '/settings', element: <LazySettingsPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
       { path: '/terms', element: <TermsPage /> },
+      { path: '/support', element: <SupportPage /> },
       { path: '/onboarding', element: <OnboardingPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },

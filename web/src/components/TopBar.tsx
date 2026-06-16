@@ -63,56 +63,88 @@ function NotificationsBell(): JSX.Element {
           haptics.light();
           setOpen((o) => !o);
         }}
+        style={{ position: 'relative' }}
       >
-        <Icon name="bell" size={20} />
+        <span className={unread > 0 ? 'bell-has-unread' : undefined} style={{ display: 'flex' }}>
+          <Icon name="bell" size={20} />
+        </span>
         {unread > 0 ? (
-          <span
-            className="pill"
-            data-tone="accent"
-            style={{ position: 'absolute', top: 2, right: 0, padding: '0 6px', minWidth: 18, justifyContent: 'center' }}
-          >
-            {unread > 99 ? '99+' : unread}
-          </span>
+          <span className="bell-badge">{unread > 99 ? '99+' : unread}</span>
         ) : null}
       </button>
       {open ? (
-        <div className="menu" style={{ right: 0, top: 'calc(100% + 6px)', width: 340 }} role="menu" aria-label="Notifications">
-          <div className="row" style={{ padding: 'var(--space-xs) var(--space-sm)', justifyContent: 'space-between' }}>
-            <strong className="text-sm">Notifications</strong>
+        <div
+          className="menu"
+          style={{ right: 0, top: 'calc(100% + 8px)', width: 'min(360px, calc(100vw - 24px))', padding: 0, overflow: 'hidden' }}
+          role="menu"
+          aria-label="Notifications"
+        >
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: 'var(--space-sm) var(--space-md)',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 'var(--font-size-sm)', letterSpacing: '-0.01em' }}>Notifications</div>
+              {unread > 0 ? (
+                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-accent)', marginTop: 1 }}>
+                  {unread} unread
+                </div>
+              ) : null}
+            </div>
             {unread > 0 ? (
-              <button type="button" className="btn btn-sm btn-ghost" onClick={markAllRead}>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={markAllRead} style={{ fontSize: 11 }}>
                 Mark all read
               </button>
             ) : null}
           </div>
-          {(data?.items ?? []).length === 0 ? (
-            <p className="text-sm text-secondary" style={{ padding: 'var(--space-sm)' }}>
-              Nothing yet. Dispute updates, FOIA deadlines, export completions and mentions land here.
-            </p>
-          ) : (
-            (data?.items ?? []).slice(0, 12).map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  void post('/users/me/notifications/read', { ids: [n.id] }).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['notifications'] }),
-                  );
-                  if (n.link) navigate(n.link);
-                }}
-                style={{ opacity: n.readAt ? 0.6 : 1, display: 'block' }}
-              >
-                <div className="col" style={{ gap: 2, alignItems: 'flex-start' }}>
-                  <span className="text-sm" style={{ fontWeight: 600 }}>
-                    {n.title}
-                  </span>
-                  <span className="text-xs text-secondary">{n.body.slice(0, 90)}</span>
-                  <span className="text-xs text-secondary">{fmtRelative(n.createdAt)}</span>
-                </div>
-              </button>
-            ))
-          )}
+          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+            {(data?.items ?? []).length === 0 ? (
+              <p className="text-sm text-secondary" style={{ padding: 'var(--space-md)', textAlign: 'center' }}>
+                Nothing yet.<br />
+                <span style={{ fontSize: 'var(--font-size-xs)' }}>Dispute updates, FOIA deadlines, exports and mentions land here.</span>
+              </p>
+            ) : (
+              (data?.items ?? []).slice(0, 12).map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    void post('/users/me/notifications/read', { ids: [n.id] }).then(() =>
+                      queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+                    );
+                    if (n.link) navigate(n.link);
+                  }}
+                  style={{
+                    display: 'flex', width: '100%', textAlign: 'left', gap: 'var(--space-sm)',
+                    padding: 'var(--space-sm) var(--space-md)',
+                    borderTop: 'none', borderRight: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    borderLeft: n.readAt ? '2px solid transparent' : '2px solid var(--color-accent)',
+                    opacity: n.readAt ? 0.5 : 1,
+                    background: n.readAt ? 'transparent' : 'rgba(0,229,168,0.04)',
+                    cursor: 'pointer', color: 'inherit', font: 'inherit',
+                    transition: 'background var(--motion-duration-fast)',
+                  }}
+                >
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: n.readAt ? 'transparent' : 'var(--color-accent)', flexShrink: 0, marginTop: 5, boxShadow: n.readAt ? 'none' : 'var(--glow-accent-soft)' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 'var(--font-size-xs)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {n.title}
+                    </div>
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {n.body}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--color-text-secondary)', marginTop: 3, opacity: 0.7 }}>
+                      {fmtRelative(n.createdAt)}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
         </div>
       ) : null}
     </div>
@@ -247,6 +279,9 @@ export function TopBar(): JSX.Element {
                 </div>
                 <Link to="/settings" onClick={() => setMenuOpen(false)}>
                   Settings & privacy
+                </Link>
+                <Link to="/support" onClick={() => setMenuOpen(false)}>
+                  Support the project
                 </Link>
                 <Link to="/privacy" onClick={() => setMenuOpen(false)}>
                   Data we collect

@@ -49,7 +49,7 @@ export default function PoliciesPage(): JSX.Element {
         </div>
         {user && user.role !== 'viewer' ? (
           <button type="button" className="btn btn-primary" onClick={() => setAddOpen(true)}>
-            ＋ Add policy
+            <Icon name="plus" size={16} /> Add policy
           </button>
         ) : null}
       </div>

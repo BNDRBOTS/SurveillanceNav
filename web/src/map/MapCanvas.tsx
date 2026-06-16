@@ -68,7 +68,10 @@ export function MapCanvas({
 }: MapCanvasProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
-  const markersRef = useRef<Marker[]>([]);
+  // Cluster bubbles are pooled by a stable key (position+count) so identical
+  // clusters are reused across re-renders instead of being destroyed and
+  // recreated every time — that destroy/recreate churn was the marker flicker.
+  const markersRef = useRef<Map<string, Marker>>(new Map());
   const clusterIndexRef = useRef<Supercluster | null>(null);
   const [ready, setReady] = useState(false);
   const [locate, setLocate] = useState<LocateState>({ status: 'idle' });
@@ -249,10 +252,22 @@ export function MapCanvas({
     const map = mapRef.current;
     if (!map || !ready || !map.getSource('assets')) return;
 
-    for (const m of markersRef.current) m.remove();
-    markersRef.current = [];
+    const pool = markersRef.current;
+    const seen = new Set<string>();
+    // Remove pooled markers whose keys weren't rendered this pass.
+    const prune = () => {
+      for (const [key, marker] of pool) {
+        if (!seen.has(key)) {
+          marker.remove();
+          pool.delete(key);
+        }
+      }
+    };
 
-    if (!data) return;
+    if (!data) {
+      prune();
+      return;
+    }
 
     const visibleTech = new Set(Object.entries(layers.techVisible).filter(([, v]) => v).map(([k]) => k));
     const techFiltered = data.features.filter((f) =>
@@ -260,6 +275,13 @@ export function MapCanvas({
     );
 
     const addClusterMarker = (lng: number, lat: number, count: number, expandZoom?: number) => {
+      const key = `${lng.toFixed(4)},${lat.toFixed(4)},${count}`;
+      seen.add(key);
+      const existing = pool.get(key);
+      if (existing) {
+        existing.setLngLat([lng, lat]); // identical cluster — reuse the DOM marker, no flicker
+        return;
+      }
       const el = document.createElement('button');
       el.type = 'button';
       const size = Math.min(58, 26 + Math.log2(count + 1) * 5.5);
@@ -272,7 +294,7 @@ export function MapCanvas({
         map.easeTo({ center: [lng, lat], zoom: expandZoom ?? Math.min(map.getZoom() + 2.5, 17) });
       });
       const marker = new Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-      markersRef.current.push(marker);
+      pool.set(key, marker);
     };
 
     if (data.clustered) {
@@ -288,6 +310,7 @@ export function MapCanvas({
           addClusterMarker(f.geometry.coordinates[0], f.geometry.coordinates[1], Number(f.properties.count ?? 1));
         }
       }
+      prune();
       announce(`Map showing ${techFiltered.reduce((acc, f) => acc + Number(f.properties.count ?? 1), 0)} assets in clusters`);
       return;
     }
@@ -324,6 +347,7 @@ export function MapCanvas({
         features: techFiltered.map((f) => ({ ...f, id: f.id ?? f.properties.id })),
       } as never);
     }
+    prune();
     map.setLayoutProperty('asset-heat', 'visibility', layers.heatmap ? 'visible' : 'none');
     map.setLayoutProperty('asset-points', 'visibility', layers.heatmap ? 'none' : 'visible');
     announce(`Map showing ${techFiltered.length} assets`);

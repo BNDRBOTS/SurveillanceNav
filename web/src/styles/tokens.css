@@ -1,138 +1,166 @@
 /**
- * STN design tokens — "Void & Glow" system.
- * Three structural neutrals (void, charcoal, graphite line) + bone text,
- * with bright edge-glow functional colors. No blue tints anywhere.
- *   void      #050505  — gloss deep black canvas
- *   charcoal  #0E0F10 / #161718 — elevated surfaces
- *   mint glow #00E5A8  — primary action / live edges
- *   amber     #FFB347  — caution
- *   signal    #FF4D4D  — danger
+ * STN — "Obsidian Lux" design system.
+ *
+ * Architecture: deep void backgrounds with violet undertone, not flat black.
+ * Surfaces are diamond-glass layers (real transparency + blur).
+ * Typography is weight-brutal: display at 900, body at 400, labels at 300.
+ * Accent is hypercharged mint-glow, used surgically not splashed.
+ * All structural elements are sharp-cornered (0 radius) except pills/badges.
+ * Borders are architectural rails, not decoration.
  */
 :root {
-  /* color — structure */
-  --color-bg-primary: #050505;
-  --color-bg-secondary: #0E0F10;
-  --color-bg-tertiary: #161718;
-  --color-border: #26282B;
-  --color-border-strong: #62686F;
-  --color-bg-hover: #1D1F21;
-  --color-scrim: rgba(0, 0, 0, 0.72);
+  /* ── deep void ──────────────────────────────────────────────── */
+  /* subtle violet undertone separates this from generic "dark mode" */
+  --color-bg-primary:   #040407;
+  --color-bg-secondary: #08080E;
+  --color-bg-tertiary:  #0E0E18;
+  --color-border:       rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-bg-hover:     rgba(255, 255, 255, 0.04);
+  --color-scrim:        rgba(2, 2, 8, 0.80);
 
-  /* color — text */
-  --color-text-primary: #F4F4F2;
-  --color-text-secondary: #9BA0A6;
+  /* ── text ───────────────────────────────────────────────────── */
+  --color-text-primary:   #EEEEF2;
+  --color-text-secondary: #737387;
 
-  /* color — function (the glow set) */
-  --color-accent: #00E5A8;
-  --color-accent-strong: #00B88C;
-  --color-accent-ink: #03251B;
-  --color-danger: #FF4D4D;
-  --color-warning: #FFB347;
-  --color-success: #4ADE80;
-  --color-focus-ring: #00E5A8;
+  /* ── function palette ──────────────────────────────────────── */
+  --color-accent:        #00F2B4;   /* slightly brighter mint — vivid against void */
+  --color-accent-strong: #00C492;
+  --color-accent-dim:    rgba(0, 242, 180, 0.12);
+  --color-accent-ink:    #021A10;
+  --color-danger:        #FF3B3B;
+  --color-warning:       #F5A623;
+  --color-success:       #2ECC71;
+  --color-focus-ring:    #00F2B4;
 
-  /* color — extended palette (categorization, tags, badges) */
-  --color-purple: #8B7CF6;
+  /* ── extended palette ──────────────────────────────────────── */
+  --color-purple: #7C6EF5;
   --color-cement: #8B96A8;
-  --color-pink: #FF5CA8;
-  --color-cyan: #19D3DA;
-  --color-orange: #FF8E3C;
+  --color-pink:   #F053A0;
+  --color-cyan:   #00D4E8;
+  --color-orange: #FF7B2F;
 
-  /* glow effects — function + style */
-  --glow-accent: 0 0 14px rgba(0, 229, 168, 0.32), 0 0 2px rgba(0, 229, 168, 0.55);
-  --glow-accent-soft: 0 0 10px rgba(0, 229, 168, 0.16);
-  --glow-danger: 0 0 12px rgba(255, 77, 77, 0.3);
-  --glow-purple: 0 0 12px rgba(139, 124, 246, 0.3);
-  --gloss-edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* ── multi-layer glow system ────────────────────────────────── */
+  /* far:  ambient halo   — barely visible, creates environment depth   */
+  /* mid:  edge glow      — coin-edge blur on close elements             */
+  /* sharp: contact light — on actual glowing element surface            */
+  --glow-accent-far:   0 0 60px rgba(0, 242, 180, 0.07);
+  --glow-accent:       0 0 20px rgba(0, 242, 180, 0.28), 0 0 4px rgba(0, 242, 180, 0.6);
+  --glow-accent-sharp: 0 0 6px rgba(0, 242, 180, 0.9), 0 0 1px rgba(255, 255, 255, 0.5);
+  --glow-accent-soft:  0 0 14px rgba(0, 242, 180, 0.14);
+  --glow-danger:       0 0 16px rgba(255, 59, 59, 0.35);
+  --glow-purple:       0 0 16px rgba(124, 110, 245, 0.35);
 
-  /* glassmorphism — dark/void surfaces */
-  --glass-bg: rgba(14, 15, 16, 0.68);
-  --glass-bg-heavy: rgba(22, 23, 24, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --glass-blur: blur(20px) saturate(150%);
+  /* ── diamond glass layers ───────────────────────────────────── */
+  /* each layer is progressively more opaque; the "diamond" effect   */
+  /* comes from seeing multiple levels of depth through each surface  */
+  --glass-ultra:      rgba(255, 255, 255, 0.02);   /* almost invisible — deepest layer */
+  --glass-bg:         rgba(8, 8, 16, 0.55);         /* primary surface                  */
+  --glass-bg-heavy:   rgba(14, 14, 26, 0.78);       /* elevated / modal surface          */
+  --glass-border:     rgba(255, 255, 255, 0.07);
+  --glass-border-lit: rgba(255, 255, 255, 0.13);
+  --glass-blur:       blur(28px) saturate(180%) brightness(1.05);
+  --glass-blur-heavy: blur(40px) saturate(200%) brightness(1.08);
 
-  /* typography */
-  --font-family: "Inter", "SF Pro", "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
-  --font-size-xs: 12px; --line-height-xs: 16px;
-  --font-size-sm: 14px; --line-height-sm: 20px;
-  --font-size-md: 16px; --line-height-md: 24px;
+  /* structural left rail used on cards, sidenav items, toasts    */
+  --rail-width: 2px;
+
+  /* ── typography ─────────────────────────────────────────────── */
+  --font-family: "Inter", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono:   ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  /* sizes unchanged — drama comes from weight, not scale bloat */
+  --font-size-xs: 11px; --line-height-xs: 15px;
+  --font-size-sm: 13px; --line-height-sm: 18px;
+  --font-size-md: 15px; --line-height-md: 22px;
   --font-size-lg: 20px; --line-height-lg: 28px;
-  --font-size-xl: 28px; --line-height-xl: 36px;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
+  --font-size-xl: 36px; --line-height-xl: 40px;
+  /* weight extremes — the contrast IS the design */
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  --font-weight-bold:     700;
+  --font-weight-black:    900;
 
-  /* spacing & layout */
+  /* ── spacing ────────────────────────────────────────────────── */
   --space-xxs: 4px;
-  --space-xs: 8px;
-  --space-sm: 12px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
+  --space-xs:  8px;
+  --space-sm:  12px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
   --space-xxl: 48px;
-  --radius-sm: 3px;
-  --radius-md: 5px;
-  --radius-lg: 8px;
-  --radius-full: 999px;
-  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.55);
-  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.65);
-  --z-map: 0;
+
+  /* ── radius — near zero; sharp = intentional, not default ───── */
+  --radius-sm:   0px;   /* structural elements: cards, modals, drawers */
+  --radius-md:   2px;   /* inputs/fields: barely-there softening        */
+  --radius-lg:   0px;   /* panels, large surfaces                        */
+  --radius-full: 999px; /* pills and badges stay full                    */
+
+  /* ── shadows — depth without softness ──────────────────────── */
+  --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.7);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  /* ── z-index ─────────────────────────────────────────────────── */
+  --z-map:     0;
   --z-overlay: 10;
-  --z-modal: 100;
-  --z-toast: 200;
+  --z-modal:   100;
+  --z-toast:   200;
   --z-tooltip: 300;
 
-  /* motion */
-  --motion-duration-fast: 120ms;
-  --motion-duration-med: 200ms;
-  --motion-duration-slow: 360ms;
-  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* ── motion ──────────────────────────────────────────────────── */
+  --motion-duration-fast: 100ms;
+  --motion-duration-med:  180ms;
+  --motion-duration-slow: 300ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* layout metrics */
-  --topbar-h: 56px;
-  --sidenav-w: 232px;
+  /* ── layout ──────────────────────────────────────────────────── */
+  --topbar-h:    52px;
+  --sidenav-w:   220px;
   --touch-target: 44px;
 }
 
-/* High-contrast mode (user toggle and/or OS preference) */
+/* ── high-contrast mode ──────────────────────────────────────────── */
 :root[data-contrast="high"] {
-  --color-bg-primary: #000;
-  --color-bg-secondary: #000;
-  --color-bg-tertiary: #0a0a0a;
-  --color-text-primary: #FFF;
+  --color-bg-primary:    #000;
+  --color-bg-secondary:  #000;
+  --color-bg-tertiary:   #0a0a0a;
+  --color-text-primary:  #FFF;
   --color-text-secondary: #e8e8e8;
-  --color-accent: #FFFF00;
+  --color-accent:        #FFFF00;
   --color-accent-strong: #e6e600;
-  --color-accent-ink: #000;
-  --color-border: #888;
-  --color-border-strong: #aaa;
-  --color-focus-ring: #FFFF00;
-  --color-bg-hover: #1c1c1c;
-  --glow-accent: none;
-  --glow-accent-soft: none;
-  --glow-danger: none;
-  --gloss-edge: none;
+  --color-accent-ink:    #000;
+  --color-border:        rgba(255,255,255,0.5);
+  --color-border-strong: rgba(255,255,255,0.7);
+  --color-focus-ring:    #FFFF00;
+  --color-bg-hover:      rgba(255,255,255,0.08);
+  --glow-accent:         none;
+  --glow-accent-soft:    none;
+  --glow-danger:         none;
+  --glass-bg:            #0a0a0a;
+  --glass-bg-heavy:      #111;
+  --glass-border:        rgba(255,255,255,0.4);
+  --glass-blur:          none;
+  --glass-blur-heavy:    none;
 }
 
 @media (prefers-contrast: more) {
   :root:not([data-contrast="normal"]) {
-    --color-border: #6b6f75;
-    --color-text-secondary: #d4d7da;
+    --color-border:        rgba(255, 255, 255, 0.22);
+    --color-text-secondary: #c8cad0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-duration-fast: 0ms;
-    --motion-duration-med: 0ms;
+    --motion-duration-med:  0ms;
     --motion-duration-slow: 0ms;
   }
 }
 :root[data-motion="reduced"] {
   --motion-duration-fast: 0ms;
-  --motion-duration-med: 0ms;
+  --motion-duration-med:  0ms;
   --motion-duration-slow: 0ms;
 }

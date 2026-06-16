@@ -22,7 +22,14 @@ export function SideNav(): JSX.Element {
         <NavLink key={item.to} to={item.to}>
           {({ isActive }) => (
             <>
-              <Icon name={item.icon} style={{ color: isActive ? item.color : undefined }} />
+              <Icon
+                name={item.icon}
+                style={{
+                  color: item.color,
+                  opacity: isActive ? 1 : 0.7,
+                  filter: isActive ? `drop-shadow(0 0 6px ${item.color}66)` : 'none',
+                }}
+              />
               {item.label}
             </>
           )}
@@ -54,7 +61,15 @@ export function BottomNav(): JSX.Element {
         <NavLink key={item.to} to={item.to}>
           {({ isActive }) => (
             <>
-              <Icon name={item.icon} size={22} style={{ color: isActive ? item.color : undefined }} />
+              <Icon
+                name={item.icon}
+                size={22}
+                style={{
+                  color: item.color,
+                  opacity: isActive ? 1 : 0.7,
+                  filter: isActive ? `drop-shadow(0 0 6px ${item.color}66)` : 'none',
+                }}
+              />
               {item.label}
             </>
           )}

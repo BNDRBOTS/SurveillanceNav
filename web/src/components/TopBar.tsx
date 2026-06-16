@@ -75,7 +75,7 @@ function NotificationsBell(): JSX.Element {
       {open ? (
         <div
           className="menu"
-          style={{ right: 0, top: 'calc(100% + 8px)', width: 360, padding: 0, overflow: 'hidden' }}
+          style={{ right: 0, top: 'calc(100% + 8px)', width: 'min(360px, calc(100vw - 24px))', padding: 0, overflow: 'hidden' }}
           role="menu"
           aria-label="Notifications"
         >

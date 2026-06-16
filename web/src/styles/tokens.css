@@ -31,11 +31,25 @@
   --color-success: #4ADE80;
   --color-focus-ring: #00E5A8;
 
+  /* color — extended palette (categorization, tags, badges) */
+  --color-purple: #8B7CF6;
+  --color-cement: #8B96A8;
+  --color-pink: #FF5CA8;
+  --color-cyan: #19D3DA;
+  --color-orange: #FF8E3C;
+
   /* glow effects — function + style */
   --glow-accent: 0 0 14px rgba(0, 229, 168, 0.32), 0 0 2px rgba(0, 229, 168, 0.55);
   --glow-accent-soft: 0 0 10px rgba(0, 229, 168, 0.16);
   --glow-danger: 0 0 12px rgba(255, 77, 77, 0.3);
+  --glow-purple: 0 0 12px rgba(139, 124, 246, 0.3);
   --gloss-edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* glassmorphism — dark/void surfaces */
+  --glass-bg: rgba(14, 15, 16, 0.68);
+  --glass-bg-heavy: rgba(22, 23, 24, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-blur: blur(20px) saturate(150%);
 
   /* typography */
   --font-family: "Inter", "SF Pro", "Helvetica Neue", system-ui, sans-serif;
@@ -58,9 +72,9 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-xxl: 48px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
   --radius-full: 999px;
   --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.45);
   --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.55);

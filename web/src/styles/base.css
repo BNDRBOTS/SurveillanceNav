@@ -99,13 +99,15 @@ textarea.input { resize: vertical; min-height: 96px; }
 
 /* ---------------- surfaces ---------------- */
 .card {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
   box-shadow: var(--shadow-1);
 }
-.panel { background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.panel { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); }
 
 /* ---------------- badges & pills ---------------- */
 .pill {
@@ -191,8 +193,10 @@ textarea.input { resize: vertical; min-height: 96px; }
   animation: fade-in var(--motion-duration-med) var(--motion-ease);
 }
 .modal {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
   width: 100%; max-width: 520px; max-height: 86dvh;
@@ -214,8 +218,10 @@ textarea.input { resize: vertical; min-height: 96px; }
 .drawer {
   position: fixed; top: var(--topbar-h); right: 0; bottom: 0; z-index: var(--z-overlay);
   width: min(440px, 100vw);
-  background: var(--color-bg-secondary);
-  border-left: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-left: 1px solid var(--glass-border);
   box-shadow: var(--shadow-3);
   display: flex; flex-direction: column;
   animation: drawer-in var(--motion-duration-med) var(--motion-ease);
@@ -361,7 +367,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .menu {
   position: absolute; z-index: var(--z-tooltip);
   min-width: 220px; max-height: 70dvh; overflow: auto;
-  background: var(--color-bg-tertiary); border: 1px solid var(--color-border);
+  background: var(--glass-bg-heavy); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md); box-shadow: var(--shadow-3);
   padding: var(--space-xxs);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease);
@@ -392,6 +399,25 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 .timeline-item::before { content: ""; position: absolute; left: calc(-1 * var(--space-lg) + 2px); top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--color-accent); border: 2px solid var(--color-bg-primary); }
 .progressbar { height: 6px; border-radius: var(--radius-full); background: var(--color-border); overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bell-ring {
+  0%,100% { transform: rotate(0deg); }
+  10%      { transform: rotate(14deg); }
+  20%      { transform: rotate(-12deg); }
+  30%      { transform: rotate(10deg); }
+  40%      { transform: rotate(-8deg); }
+  50%      { transform: rotate(6deg); }
+  60%      { transform: rotate(-4deg); }
+}
+.bell-has-unread { animation: bell-ring 2.8s ease 1s 1; transform-origin: top center; }
+.bell-badge {
+  position: absolute; top: 2px; right: 0;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent); color: var(--color-accent-ink);
+  font-size: 10px; font-weight: 700; line-height: 18px; text-align: center;
+  box-shadow: var(--glow-accent-soft);
+  pointer-events: none;
+}
 .progressbar > div { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width var(--motion-duration-med) var(--motion-ease); }
 
 .auth-layout { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-lg); }
@@ -502,6 +528,26 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 }
 
 /* paper-scope component recalibration */
+.main:has(.page) .card {
+  background: var(--color-bg-tertiary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--color-border);
+}
+.main:has(.page) .panel {
+  background: var(--color-bg-secondary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--color-border);
+}
+.main:has(.page) .modal,
+.main:has(.page) .drawer,
+.main:has(.page) .menu {
+  background: var(--color-bg-tertiary);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--color-border);
+}
 .main:has(.page) .table th { background: #16171A; color: #C9CCCF; }
 .main:has(.page) .skeleton {
   background: linear-gradient(100deg, #E3DFD4 40%, #EFECE4 50%, #E3DFD4 60%);

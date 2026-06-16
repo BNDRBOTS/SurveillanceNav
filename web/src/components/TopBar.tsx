@@ -248,6 +248,9 @@ export function TopBar(): JSX.Element {
                 <Link to="/settings" onClick={() => setMenuOpen(false)}>
                   Settings & privacy
                 </Link>
+                <Link to="/support" onClick={() => setMenuOpen(false)}>
+                  Support the project
+                </Link>
                 <Link to="/privacy" onClick={() => setMenuOpen(false)}>
                   Data we collect
                 </Link>

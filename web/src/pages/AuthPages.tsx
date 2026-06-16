@@ -83,7 +83,7 @@ export function LoginPage(): JSX.Element {
           </Link>
         </div>
         <p className="text-xs text-secondary" style={{ textAlign: 'center' }}>
-          You can <Link to="/map">browse the public map</Link> without an account.
+          You can <Link to="/map">browse the public map</Link> without an account · <Link to="/support">support the project</Link>
         </p>
       </form>
     </div>

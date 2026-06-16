@@ -138,6 +138,78 @@ export function TermsPage(): JSX.Element {
   );
 }
 
+/** External support links. Donation-only for now; no backend, no Stripe keys required. */
+const SUPPORT_LINKS = {
+  donate: 'https://donate.stripe.com/28E28r1JN7cm5VW0Ag0oM04',
+  substack: 'https://substack.com/@bndrllc',
+};
+
+export function SupportPage(): JSX.Element {
+  return (
+    <div className="page" style={{ maxWidth: 760 }}>
+      <h1>Support Lens of Light</h1>
+      <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
+        The map, navigation, and FOIA tools are free to use. The project runs on donations right now — if it’s
+        useful to you, chipping in keeps the servers on and the data flowing.
+      </p>
+      <div className="col">
+        <div className="card col">
+          <h2>Donate</h2>
+          <p className="text-sm text-secondary">
+            Donations are the only support right now — no paywalls, no locked features. What comes in goes to hosting,
+            data imports, and FOIA costs.
+          </p>
+          <a
+            className="btn btn-primary"
+            style={{ alignSelf: 'flex-start' }}
+            href={SUPPORT_LINKS.donate}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Support the project
+          </a>
+          <p className="text-xs text-secondary">Secure checkout handled entirely by Stripe — we never see your card.</p>
+        </div>
+
+        <div className="card col">
+          <h2>Read &amp; follow</h2>
+          <p className="text-sm text-secondary">Research, write-ups, and project updates are published on Substack.</p>
+          <a
+            className="btn btn-ghost"
+            style={{ alignSelf: 'flex-start' }}
+            href={SUPPORT_LINKS.substack}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            BNDR on Substack
+          </a>
+        </div>
+
+        <div className="card col">
+          <h2>Suggestions &amp; corrections</h2>
+          <p className="text-sm text-secondary">
+            Spotted something wrong on the map, or have an idea to make this better? This is a best-effort project and
+            improvements get made as they come in.
+          </p>
+          <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)' }}>
+            <li>
+              <strong>A specific record looks wrong</strong> — open it on the <Link to="/map">map</Link> and use{' '}
+              <strong>Dispute</strong>. Curators must respond, and the resolution becomes permanent public history.
+            </li>
+            <li>
+              <strong>General feedback or feature ideas</strong> — reach out via{' '}
+              <a href={SUPPORT_LINKS.substack} target="_blank" rel="noopener noreferrer">
+                Substack
+              </a>
+              .
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function NotFoundPage(): JSX.Element {
   return (
     <div className="auth-layout">

@@ -29,7 +29,7 @@ export default function AdminPage(): JSX.Element {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1100 }}>
+    <div className="page" style={{ maxWidth: 1280 }}>
       <div className="page-header">
         <h1>Operations console</h1>
       </div>

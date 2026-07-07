@@ -68,3 +68,4 @@ export const LazyPoliciesPage = lazy(() => import('@/pages/PoliciesPage'));
 export const LazyReportsPage = lazy(() => import('@/pages/ReportsPage'));
 export const LazyAdminPage = lazy(() => import('@/pages/AdminPage'));
 export const LazySettingsPage = lazy(() => import('@/pages/SettingsPage'));
+export const LazyHelpPage = lazy(() => import('@/pages/HelpPage'));

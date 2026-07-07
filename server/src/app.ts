@@ -109,7 +109,11 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Single not-found handler: SPA fallback for app routes, JSON envelope otherwise.
   app.setNotFoundHandler((req, reply) => {
-    if (hasWebBuild && !req.url.startsWith('/api/') && req.method === 'GET' && !req.url.includes('.')) {
+    // Decide on the pathname alone — query strings routinely contain dots
+    // (shared map links look like /map?lng=-122.41&lat=37.78) and must not
+    // knock a client route back to the JSON 404.
+    const pathname = req.url.split('?')[0]!;
+    if (hasWebBuild && !pathname.startsWith('/api/') && req.method === 'GET' && !pathname.includes('.')) {
       return reply.type('text/html').send(fs.readFileSync(path.join(dist, 'index.html')));
     }
     return reply.status(404).send({

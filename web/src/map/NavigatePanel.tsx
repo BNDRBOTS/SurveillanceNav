@@ -376,7 +376,7 @@ export function NavigatePanel({
                 rel="noreferrer"
                 onClick={() => haptics.light()}
               >
-                Google Maps <Icon name="external-link" size={14} />
+                Open in Google Maps <Icon name="external-link" size={14} />
               </a>
               <a
                 className="btn btn-ghost"
@@ -393,7 +393,8 @@ export function NavigatePanel({
               </a>
             </div>
             <p className="text-xs text-secondary">
-              Google/Apple follow your avoidance route via pinned waypoints — re-check the preview before driving.
+              Handing off keeps your route: the camera-avoiding path is pinned into Google or Apple Maps as waypoints,
+              so their app drives the same streets. Glance at their preview before you set off.
             </p>
 
             <button type="button" className="btn btn-sm btn-ghost" onClick={() => setStepsOpen((o) => !o)} aria-expanded={stepsOpen}>

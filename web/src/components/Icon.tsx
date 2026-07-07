@@ -1,13 +1,17 @@
-import type { SVGProps } from 'react';
+import { useId, type SVGProps } from 'react';
 
 /**
- * Custom inline icon set — line icons drawn in the app's established SVG style
- * (24×24 viewBox, no fill, currentColor stroke, round caps), matching `Logo`
- * and `Feedback`. Geometry follows the Feather/Lucide conventions but ships as
- * our own component: no icon dependency, and — unlike emoji — it renders
- * identically on every platform and inherits text color and size.
+ * STN custom icon set — original geometry drawn for this app, not an icon
+ * library. The language: machined optics. Angular, faceted silhouettes with
+ * slanted edges (echoing the parallelogram surfaces), a translucent duotone
+ * body, a gradient stroke in the icon's jewel tone, and a small champagne-gold
+ * "signal" detail that catches the eye. Feature icons carry their own hue;
+ * utility glyphs (plus, x, check…) stay `currentColor` so they inherit button
+ * ink correctly. High-contrast mode strips color and glow via base.css.
  *
- * Size with `size` (px, default 20); color comes from `currentColor`.
+ * Size with `size` (px, default 20). Override hue with `tone`, or force
+ * monochrome with tone="mono". `glow` adds the subtle halo (defaults on for
+ * toned icons, off for mono).
  */
 export type IconName =
   | 'map'
@@ -49,260 +53,477 @@ export type IconName =
   | 'edit'
   | 'eye'
   | 'eye-off'
-  | 'wifi-off';
+  | 'wifi-off'
+  | 'compass'
+  | 'life-buoy';
 
-const PATHS: Record<IconName, JSX.Element> = {
-  map: (
-    <>
-      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-      <line x1="8" y1="2" x2="8" y2="18" />
-      <line x1="16" y1="6" x2="16" y2="22" />
-    </>
-  ),
-  mail: (
-    <>
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </>
-  ),
-  'file-text': (
-    <>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <line x1="10" y1="9" x2="8" y2="9" />
-    </>
-  ),
-  scale: (
-    <>
-      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
-      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
-      <path d="M7 21h10" />
-      <path d="M12 3v18" />
-      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
-    </>
-  ),
-  download: (
-    <>
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
-    </>
-  ),
-  users: (
-    <>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </>
-  ),
-  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-  code: (
-    <>
-      <polyline points="16 18 22 12 16 6" />
-      <polyline points="8 6 2 12 8 18" />
-    </>
-  ),
-  bell: (
-    <>
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </>
-  ),
-  plus: (
-    <>
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </>
-  ),
-  check: <polyline points="20 6 9 17 4 12" />,
-  'chevron-down': <polyline points="6 9 12 15 18 9" />,
-  locate: (
-    <>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="22" y1="12" x2="18" y2="12" />
-      <line x1="6" y1="12" x2="2" y2="12" />
-      <line x1="12" y1="6" x2="12" y2="2" />
-      <line x1="12" y1="22" x2="12" y2="18" />
-    </>
-  ),
-  'map-pin': (
-    <>
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
-    </>
-  ),
-  'volume-2': (
-    <>
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-    </>
-  ),
-  'volume-x': (
-    <>
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-      <line x1="23" y1="9" x2="17" y2="15" />
-      <line x1="17" y1="9" x2="23" y2="15" />
-    </>
-  ),
-  camera: (
-    <>
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </>
-  ),
-  flag: (
-    <>
-      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-      <line x1="4" y1="22" x2="4" y2="15" />
-    </>
-  ),
-  car: (
-    <>
-      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-      <circle cx="7" cy="17" r="2" />
-      <path d="M9 17h6" />
-      <circle cx="17" cy="17" r="2" />
-    </>
-  ),
-  footprints: (
-    <>
-      <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z" />
-      <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 1-4 0Z" />
-      <path d="M16 17h4" />
-      <path d="M4 13h4" />
-    </>
-  ),
-  bike: (
-    <>
-      <circle cx="5.5" cy="17.5" r="3.5" />
-      <circle cx="18.5" cy="17.5" r="3.5" />
-      <circle cx="15" cy="5" r="1" />
-      <path d="M12 17.5V14l-3-3 4-3 2 3h2" />
-    </>
-  ),
-  'arrow-up-down': (
-    <>
-      <path d="m21 16-4 4-4-4" />
-      <path d="M17 20V4" />
-      <path d="m3 8 4-4 4 4" />
-      <path d="M7 4v16" />
-    </>
-  ),
-  x: (
-    <>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </>
-  ),
-  'alert-triangle': (
-    <>
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </>
-  ),
-  zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
-  play: <polygon points="6 3 20 12 6 21 6 3" />,
-  'external-link': (
-    <>
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </>
-  ),
-  navigation: <polygon points="3 11 22 2 13 21 11 13 3 11" />,
-  filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />,
-  layers: (
-    <>
-      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-      <polyline points="2 17 12 22 22 17" />
-      <polyline points="2 12 12 17 22 12" />
-    </>
-  ),
-  target: (
-    <>
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <circle cx="12" cy="12" r="2" />
-    </>
-  ),
-  star: (
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  ),
-  link: (
-    <>
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-    </>
-  ),
-  trash: (
-    <>
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </>
-  ),
-  image: (
-    <>
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </>
-  ),
-  loader: <path d="M21 12a9 9 0 1 1-6.219-8.56" />,
-  edit: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />,
-  eye: (
-    <>
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </>
-  ),
-  'eye-off': (
-    <>
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </>
-  ),
-  'wifi-off': (
-    <>
-      <line x1="1" y1="1" x2="23" y2="23" />
-      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
-      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
-      <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
-      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
-      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-      <line x1="12" y1="20" x2="12.01" y2="20" />
-    </>
-  ),
+export type IconTone = 'gold' | 'violet' | 'cyan' | 'rose' | 'ember' | 'jade' | 'crimson' | 'silver' | 'mono';
+
+/** Jewel palette — mirrors tokens.css (contrast-audited there). */
+const TONES: Record<Exclude<IconTone, 'mono'>, { light: string; base: string; halo: string }> = {
+  gold:    { light: '#F7E3B0', base: '#E9C46A', halo: 'rgba(233,196,106,0.45)' },
+  violet:  { light: '#C9BEFF', base: '#A18FFF', halo: 'rgba(161,143,255,0.45)' },
+  cyan:    { light: '#8CE4F2', base: '#3FC9DE', halo: 'rgba(63,201,222,0.45)' },
+  rose:    { light: '#F9A2C2', base: '#F0699C', halo: 'rgba(240,105,156,0.45)' },
+  ember:   { light: '#FFBD95', base: '#FF8E4D', halo: 'rgba(255,142,77,0.45)' },
+  jade:    { light: '#8FE9BC', base: '#46D68C', halo: 'rgba(70,214,140,0.45)' },
+  crimson: { light: '#FF9B9B', base: '#FF5C5C', halo: 'rgba(255,92,92,0.45)' },
+  silver:  { light: '#D6DAE4', base: '#9BA3B5', halo: 'rgba(155,163,181,0.40)' },
+};
+
+const GOLD = 'var(--color-accent, #E9C46A)';
+
+interface Glyph {
+  tone: IconTone;
+  /** Gradient-stroked structure. */
+  base: JSX.Element;
+  /** Translucent duotone body (filled silhouette). */
+  dim?: JSX.Element;
+  /** Champagne-gold signal detail. */
+  spark?: JSX.Element;
+}
+
+const GLYPHS: Record<IconName, Glyph> = {
+  /* Folded field map with slanted panels; gold locator diamond. */
+  map: {
+    tone: 'gold',
+    dim: <path d="M4 6.5 10 3.5l4 2 6-3v15l-6 3-4-2-6 3Z" />,
+    base: (
+      <>
+        <path d="M4 6.5 10 3.5l4 2 6-3v15l-6 3-4-2-6 3Z" />
+        <path d="M10 3.5v15M14 5.5v15" />
+      </>
+    ),
+    spark: <path d="M12 8.6 14 10.6 12 12.6 10 10.6Z" fill={GOLD} stroke="none" />,
+  },
+  /* Envelope with clipped corner; gold seal at the fold. */
+  mail: {
+    tone: 'cyan',
+    dim: <path d="M3 6h15l3 3v9H3Z" />,
+    base: (
+      <>
+        <path d="M3 6h15l3 3v9H3Z" />
+        <path d="m3 6.5 9 6.5 9-4" />
+      </>
+    ),
+    spark: <circle cx="12" cy="13" r="1.3" fill={GOLD} stroke="none" />,
+  },
+  /* Document with a deep slant-cut corner and one gold redaction bar. */
+  'file-text': {
+    tone: 'violet',
+    dim: <path d="M6 3h8.5L19 7.5V21H6Z" />,
+    base: (
+      <>
+        <path d="M6 3h8.5L19 7.5V21H6Z" />
+        <path d="M14.5 3v4.5H19M9 12.2h7M9 15.6h4.5" />
+      </>
+    ),
+    spark: <path d="M9 8.6h2.6" stroke={GOLD} strokeWidth="2.2" />,
+  },
+  /* Balance with a slanted beam and open triangle pans. */
+  scale: {
+    tone: 'rose',
+    base: (
+      <>
+        <path d="M12 4.5v15.5M8.5 20h7" />
+        <path d="M5 7.6 19 6.2" />
+        <path d="M2.8 12.4 5 8l2.2 4.4H2.8ZM16.8 11 19 6.6l2.2 4.4h-4.4Z" />
+      </>
+    ),
+    spark: <path d="M12 5.5 13.5 7 12 8.5 10.5 7Z" fill={GOLD} stroke="none" />,
+  },
+  /* Delivery tray with chamfered arrowhead and gold landing dot. */
+  download: {
+    tone: 'ember',
+    base: (
+      <>
+        <path d="M4 16.5V21h16v-4.5" />
+        <path d="M12 3v10.5M7.5 9 12 13.5 16.5 9" />
+      </>
+    ),
+    spark: <circle cx="12" cy="17.4" r="1.3" fill={GOLD} stroke="none" />,
+  },
+  /* Two angular busts — hex heads, squared shoulders. */
+  users: {
+    tone: 'jade',
+    dim: <path d="M9 5 11.2 6.3v2.6L9 10.2 6.8 8.9V6.3Z" />,
+    base: (
+      <>
+        <path d="M9 5 11.2 6.3v2.6L9 10.2 6.8 8.9V6.3Z" />
+        <path d="M3.5 19v-2.2L6 13.8h6l2.5 3V19" />
+        <path d="M15.8 13.8h2.8l2 2.6V19M15.9 5.7l1.8 1.1v2.2l-1.8 1.1" />
+      </>
+    ),
+  },
+  /* Angular ward shield with a gold optic slit. */
+  shield: {
+    tone: 'crimson',
+    dim: <path d="M12 3l8 3v6l-2.5 5.5L12 21l-5.5-3.5L4 12V6Z" />,
+    base: <path d="M12 3l8 3v6l-2.5 5.5L12 21l-5.5-3.5L4 12V6Z" />,
+    spark: (
+      <>
+        <path d="M9.2 11h5.6" stroke={GOLD} />
+        <circle cx="12" cy="11" r="1.1" fill={GOLD} stroke="none" />
+      </>
+    ),
+  },
+  /* Slanted brackets; the slash is the gold beam. */
+  code: {
+    tone: 'violet',
+    base: <path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5" />,
+    spark: <path d="M13.6 4.5 10.4 19.5" stroke={GOLD} />,
+  },
+  /* Faceted bell with sharp ring ticks. */
+  bell: {
+    tone: 'gold',
+    dim: <path d="M12 3.5 14.8 5.2l1 4.3 1.7 4.5 2 2.5H4.5l2-2.5 1.7-4.5 1-4.3Z" />,
+    base: (
+      <>
+        <path d="M12 3.5 14.8 5.2l1 4.3 1.7 4.5 2 2.5H4.5l2-2.5 1.7-4.5 1-4.3Z" />
+        <path d="M10.2 19.5 12 21l1.8-1.5" />
+      </>
+    ),
+    spark: <path d="M18.6 5.4 20.2 3.8M19.9 8.6l2.2-.6" stroke={GOLD} />,
+  },
+  plus: { tone: 'mono', base: <path d="M12 5v14M5 12h14" /> },
+  check: { tone: 'mono', base: <path d="M4.5 12.5 10 18 19.5 7" /> },
+  'chevron-down': { tone: 'mono', base: <path d="M6 9.5 12 15.5 18 9.5" /> },
+  /* Registration-mark crosshair: corner brackets + gold core. */
+  locate: {
+    tone: 'cyan',
+    base: (
+      <>
+        <path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4" />
+        <path d="M12 7.5v3M12 13.5v3M7.5 12h3M13.5 12h3" />
+      </>
+    ),
+    spark: <circle cx="12" cy="12" r="1.4" fill={GOLD} stroke="none" />,
+  },
+  /* Faceted diamond pin. */
+  'map-pin': {
+    tone: 'gold',
+    dim: <path d="M12 21.5 6.5 13.5V9L9 5.5h6L17.5 9v4.5Z" />,
+    base: (
+      <>
+        <path d="M12 21.5 6.5 13.5V9L9 5.5h6L17.5 9v4.5Z" />
+        <path d="M6.5 9h11" />
+      </>
+    ),
+    spark: <path d="M12 10.2 13.6 11.8 12 13.4 10.4 11.8Z" fill={GOLD} stroke="none" />,
+  },
+  /* Angular horn; gold beams radiate. */
+  'volume-2': {
+    tone: 'cyan',
+    dim: <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />,
+    base: <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />,
+    spark: <path d="M15.5 9.5 18 8M15.5 14.5 18 16M16.5 12h3" stroke={GOLD} />,
+  },
+  'volume-x': {
+    tone: 'crimson',
+    dim: <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />,
+    base: <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />,
+    spark: <path d="m16 9.5 5 5M21 9.5l-5 5" stroke={GOLD} />,
+  },
+  /* Bullet surveillance camera on a mount — the subject of the whole app. */
+  camera: {
+    tone: 'crimson',
+    dim: <path d="M3 7.5 14.5 4.5 16.2 9 4.7 12Z" />,
+    base: (
+      <>
+        <path d="M3 7.5 14.5 4.5 16.2 9 4.7 12Z" />
+        <path d="M12.6 5 14.3 9.5" />
+        <path d="M9 12v4.5M6.5 16.5h5" />
+      </>
+    ),
+    spark: <path d="M18 8.2 20.8 7.5M17.8 10.6 20.2 11.4" stroke={GOLD} />,
+  },
+  /* Notched pennant. */
+  flag: {
+    tone: 'jade',
+    dim: <path d="M5 4.5h14.5L16.5 8l3 3.5H5Z" />,
+    base: (
+      <>
+        <path d="M5 3v18" />
+        <path d="M5 4.5h14.5L16.5 8l3 3.5H5" />
+      </>
+    ),
+  },
+  /* Angular sedan profile. */
+  car: {
+    tone: 'cyan',
+    base: (
+      <>
+        <path d="M3.5 16.5v-4L6 8.5h9l3.5 3.5 2 .6v3.9h-2.1" />
+        <path d="M6.8 12.3H16M9.5 16.5h5" />
+        <circle cx="7.5" cy="16.8" r="1.8" />
+        <circle cx="16.5" cy="16.8" r="1.8" />
+      </>
+    ),
+  },
+  /* Single slanted boot print — sole and heel, with a gold tread bar. */
+  footprints: {
+    tone: 'jade',
+    dim: <path d="M8.6 3.6 15 4.4 14 12.6 8.6 11.8Z" />,
+    base: (
+      <>
+        <path d="M8.6 3.6 15 4.4 14 12.6 8.6 11.8Z" />
+        <path d="M9.2 14.4 13.4 15 12.8 19.6 9.4 19.1Z" />
+      </>
+    ),
+    spark: <path d="M10 7.6 12.9 8" stroke={GOLD} />,
+  },
+  /* Diamond-frame bicycle with gold hubs. */
+  bike: {
+    tone: 'ember',
+    base: (
+      <>
+        <circle cx="5.6" cy="17" r="3.4" />
+        <circle cx="18.4" cy="17" r="3.4" />
+        <path d="M5.6 17 9.8 9.5h5.5L18.4 17M12.3 17 9.8 9.5M15.3 9.5 14.1 6.5h2.6" />
+      </>
+    ),
+    spark: (
+      <>
+        <circle cx="5.6" cy="17" r="0.9" fill={GOLD} stroke="none" />
+        <circle cx="18.4" cy="17" r="0.9" fill={GOLD} stroke="none" />
+      </>
+    ),
+  },
+  'arrow-up-down': {
+    tone: 'mono',
+    base: <path d="M8 4.5v15M4.5 8 8 4.5 11.5 8M16 19.5v-15M12.5 16 16 19.5 19.5 16" />,
+  },
+  x: { tone: 'mono', base: <path d="M18 6 6 18M6 6l12 12" /> },
+  /* Flat-top hazard wedge; gold strike bar. */
+  'alert-triangle': {
+    tone: 'ember',
+    dim: <path d="M10.8 4.5h2.4L21 19.5H3Z" />,
+    base: <path d="M10.8 4.5h2.4L21 19.5H3Z" />,
+    spark: (
+      <>
+        <path d="M12 9.5V14" stroke={GOLD} />
+        <circle cx="12" cy="16.6" r="1.1" fill={GOLD} stroke="none" />
+      </>
+    ),
+  },
+  /* Faceted bolt. */
+  zap: {
+    tone: 'ember',
+    dim: <path d="M13.5 2.5 5.5 13.5H11L10 21.5 18.5 10.5H13Z" />,
+    base: <path d="M13.5 2.5 5.5 13.5H11L10 21.5 18.5 10.5H13Z" />,
+  },
+  /* Chamfered play wedge — mono so it inherits button ink. */
+  play: { tone: 'mono', base: <path d="M7 4.5 18.5 11v2L7 19.5Z" /> },
+  'external-link': {
+    tone: 'mono',
+    base: (
+      <>
+        <path d="M10 5H5.5v13.5H19V14" />
+        <path d="M14 3.5h6.5V10M20.5 3.5l-9 9" />
+      </>
+    ),
+  },
+  /* Machined compass needle with center facet. */
+  navigation: {
+    tone: 'gold',
+    dim: <path d="M12 2.5 18.5 21 12 16.5Z" />,
+    base: (
+      <>
+        <path d="M12 2.5 18.5 21 12 16.5 5.5 21Z" />
+        <path d="M12 2.5v14" />
+      </>
+    ),
+  },
+  /* Sharp funnel. */
+  filter: {
+    tone: 'violet',
+    dim: <path d="M3.5 4.5h17L14.5 11.5V19l-5 2.5V11.5Z" />,
+    base: <path d="M3.5 4.5h17L14.5 11.5V19l-5 2.5V11.5Z" />,
+  },
+  /* Stacked slanted sheets. */
+  layers: {
+    tone: 'cyan',
+    dim: <path d="M4.5 8 12 4.2 19.5 8 12 11.8Z" />,
+    base: (
+      <>
+        <path d="M4.5 8 12 4.2 19.5 8 12 11.8Z" />
+        <path d="M6.7 11.9 4.5 13 12 16.8 19.5 13l-2.2-1.1M6.7 16.7 4.5 17.8 12 21.6l7.5-3.8-2.2-1.1" />
+      </>
+    ),
+  },
+  /* Concentric diamonds — a reticle, not a bullseye. */
+  target: {
+    tone: 'ember',
+    base: (
+      <>
+        <path d="M12 3.5 20.5 12 12 20.5 3.5 12Z" />
+        <path d="M12 7.5 16.5 12 12 16.5 7.5 12Z" />
+      </>
+    ),
+    spark: <circle cx="12" cy="12" r="1.2" fill={GOLD} stroke="none" />,
+  },
+  /* Four-point compass sparkle. */
+  star: {
+    tone: 'gold',
+    dim: <path d="M12 2.5 14.2 9.8 21.5 12 14.2 14.2 12 21.5 9.8 14.2 2.5 12 9.8 9.8Z" />,
+    base: <path d="M12 2.5 14.2 9.8 21.5 12 14.2 14.2 12 21.5 9.8 14.2 2.5 12 9.8 9.8Z" />,
+  },
+  /* Chamfered chain plates. */
+  link: {
+    tone: 'cyan',
+    base: (
+      <>
+        <path d="M9.5 7H6L3.5 9.5v5L6 17h3.5M14.5 7H18l2.5 2.5v5L18 17h-3.5" />
+        <path d="M8.5 12h7" />
+      </>
+    ),
+  },
+  trash: {
+    tone: 'mono',
+    base: (
+      <>
+        <path d="M4.5 7h15M9 7l.8-3h4.4L15 7" />
+        <path d="M6 7l1 13.5h10L18 7M10.2 10.5l.3 6.5M13.8 10.5l-.3 6.5" />
+      </>
+    ),
+  },
+  /* Cut-corner frame; gold sun diamond. */
+  image: {
+    tone: 'violet',
+    base: (
+      <>
+        <path d="M4 4.5h13l3 3v12H4Z" />
+        <path d="M4 16.5 9.5 11l3.5 3.5 3-3 4 4" />
+      </>
+    ),
+    spark: <path d="M8.3 6.7 9.6 8 8.3 9.3 7 8Z" fill={GOLD} stroke="none" />,
+  },
+  loader: { tone: 'mono', base: <path d="M21 12a9 9 0 1 1-6.2-8.6" /> },
+  edit: {
+    tone: 'mono',
+    base: (
+      <>
+        <path d="M4 20l1.5-5L16.5 4 20 7.5 9 18.5Z" />
+        <path d="M14.5 6 18 9.5" />
+      </>
+    ),
+  },
+  /* Angular lens-eye with faceted iris — the brand mark motif. */
+  eye: {
+    tone: 'mono',
+    base: (
+      <>
+        <path d="M2.5 12 8 6.5h8L21.5 12 16 17.5H8Z" />
+        <path d="M12 8.8 15.2 12 12 15.2 8.8 12Z" />
+      </>
+    ),
+  },
+  'eye-off': {
+    tone: 'mono',
+    base: (
+      <>
+        <path d="M2.5 12 8 6.5h8L21.5 12 16 17.5H8Z" />
+        <path d="M4 20 20 4" />
+      </>
+    ),
+  },
+  /* Chevron signal, struck through. */
+  'wifi-off': {
+    tone: 'ember',
+    base: (
+      <>
+        <path d="M5 10.5 12 5.5l7 5M8 13.7 12 10.7l4 3" />
+        <circle cx="12" cy="17.3" r="1.1" fill="currentColor" stroke="none" />
+      </>
+    ),
+    spark: <path d="M4.5 19.5 19.5 4.5" stroke={GOLD} />,
+  },
+  /* Faceted compass rose — Help wayfinding. */
+  compass: {
+    tone: 'gold',
+    base: (
+      <>
+        <path d="M12 2.5 21.5 12 12 21.5 2.5 12Z" />
+        <path d="M14.8 9.2 13 14.2 9.2 14.8 11 9.8Z" />
+      </>
+    ),
+    spark: <circle cx="12" cy="12" r="1" fill={GOLD} stroke="none" />,
+  },
+  /* Ring with cardinal spokes — support/help. */
+  'life-buoy': {
+    tone: 'jade',
+    base: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3.6" />
+        <path d="M12 3v5.4M12 15.6V21M3 12h5.4M15.6 12H21" />
+      </>
+    ),
+    spark: <circle cx="12" cy="12" r="1" fill={GOLD} stroke="none" />,
+  },
 };
 
 export function Icon({
   name,
   size = 20,
-  strokeWidth = 1.6,
+  strokeWidth = 1.7,
+  tone,
+  glow,
   style,
   ...rest
-}: { name: IconName; size?: number; strokeWidth?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>): JSX.Element {
+}: {
+  name: IconName;
+  size?: number;
+  strokeWidth?: number;
+  tone?: IconTone;
+  glow?: boolean;
+} & Omit<SVGProps<SVGSVGElement>, 'name'>): JSX.Element {
+  const gid = useId();
+  const glyph = GLYPHS[name];
+  const activeTone = tone ?? glyph.tone;
+  const mono = activeTone === 'mono';
+  const palette = mono ? null : TONES[activeTone];
+  const wantGlow = glow ?? !mono;
+
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke={mono ? 'currentColor' : `url(#${gid})`}
       strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       aria-hidden="true"
-      style={{ verticalAlign: 'middle', flexShrink: 0, ...style }}
+      className="icon-duo"
+      style={{
+        verticalAlign: 'middle',
+        flexShrink: 0,
+        ...(palette && wantGlow ? { filter: `drop-shadow(0 0 3px ${palette.halo})` } : {}),
+        ...style,
+      }}
       {...rest}
     >
-      {PATHS[name]}
+      {palette ? (
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor={palette.light} />
+            <stop offset="1" stopColor={palette.base} />
+          </linearGradient>
+        </defs>
+      ) : null}
+      {glyph.dim && palette ? (
+        <g data-layer="dim" fill={palette.base} fillOpacity={0.14} stroke="none">
+          {glyph.dim}
+        </g>
+      ) : null}
+      {glyph.base}
+      {glyph.spark && !mono ? (
+        <g data-layer="spark" stroke={GOLD}>
+          {glyph.spark}
+        </g>
+      ) : null}
     </svg>
   );
 }

@@ -11,8 +11,10 @@ import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
 import { TextArea, TextInput, FileDrop } from '@/components/Form';
 import { useDebounce } from '@/lib/useDebounce';
+import { useWalkthrough } from '@/lib/tours';
 
 export default function ProcurementPage(): JSX.Element {
+  useWalkthrough('procurement');
   const user = useStore((s) => s.user);
   const [parseOpen, setParseOpen] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);

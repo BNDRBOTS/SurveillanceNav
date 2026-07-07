@@ -5,12 +5,14 @@ import type { Workspace, WorkspaceMember } from '@stn/shared';
 import { get, post, del, ApiError } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { fmtDate } from '@/lib/format';
+import { useWalkthrough } from '@/lib/tours';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { TextInput, Select } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 
 export function WorkspacesPage(): JSX.Element {
+  useWalkthrough('workspaces');
   const user = useStore((s) => s.user);
   const setWorkspaces = useStore((s) => s.setWorkspaces);
   const [createOpen, setCreateOpen] = useState(false);
@@ -180,7 +182,7 @@ export function WorkspaceDetailPage(): JSX.Element {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 860 }}>
+    <div className="page" style={{ maxWidth: 980 }}>
       <div className="page-header">
         <div className="col" style={{ gap: 4 }}>
           <Link to="/workspaces" className="text-sm text-secondary">

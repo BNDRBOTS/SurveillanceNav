@@ -12,7 +12,7 @@ Every result below was produced by executing the listed command in this reposito
 | --- | --- | --- |
 | TypeScript strict (3 packages) | `npm run typecheck` | **0 errors** |
 | Lint (typescript-eslint + react-hooks) | `npx eslint .` | **0 errors, 0 warnings** |
-| WCAG 2.2 contrast (both surfaces + markers + interactive borders) | `node scripts/contrast-audit.mjs` | **57/57 pass** (text ≥4.5:1, UI components ≥3:1) |
+| WCAG 2.2 contrast (live tokens: void + composited glass + markers + borders) | `node scripts/contrast-audit.mjs` | **49/49 pass** (text ≥4.5:1, UI components ≥3:1) — the script parses `tokens.css`, so it cannot drift from the shipped theme |
 | Server integration tests (real PostGIS + storage + outbox mail) | `npm run test -w server` | **75/75 pass** (7 files) |
 | Web tests (components, libs, axe-core a11y) | `npm run test -w web` | **17/17 pass** (3 files) |
 | Production builds | `npm run build` | server bundle + web dist ✓ |
@@ -113,7 +113,7 @@ and fully wired Stripe (Checkout, portal, HMAC-verified idempotent webhooks, pla
 
 | Gate | Result |
 | --- | --- |
-| TypeScript strict / ESLint / WCAG contrast | 0 errors / 0 errors / **57/57** |
+| TypeScript strict / ESLint / WCAG contrast | 0 errors / 0 errors / **49/49** |
 | Server tests (now incl. navigation geometry, engine-chain fallthrough with mocked engines, best-effort exposure selection, Valhalla hard-avoidance with real polyline6 codec, geocode cache+degradation, Stripe checkout/customer flow, webhook signature verify+replay-idempotency+plan flip, export cap wiring) | **88/88 pass** (was 75) |
 | Web tests | **17/17 pass** |
 | E2E smoke vs production bundle (now incl. billing status, OpenAPI nav contract, route-validation guards, geocode emptiness, engine-degradation envelope) | **34/34 pass** (was 29) |

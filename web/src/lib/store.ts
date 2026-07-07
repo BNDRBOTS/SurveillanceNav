@@ -9,6 +9,17 @@ export interface Toast {
   ttlMs: number;
 }
 
+export interface WalkthroughStep {
+  title: string;
+  body: string;
+}
+
+export interface WalkthroughState {
+  key: string;
+  steps: WalkthroughStep[];
+  index: number;
+}
+
 interface UiState {
   user: UserPublic | null;
   mfaSetupRequired: boolean;
@@ -22,6 +33,7 @@ interface UiState {
   contrast: 'normal' | 'high';
   reducedMotion: boolean;
   unreadNotifications: number;
+  walkthrough: WalkthroughState | null;
 
   setUser(user: UserPublic | null, mfaSetupRequired?: boolean): void;
   setAuthReady(): void;
@@ -35,6 +47,9 @@ interface UiState {
   setContrast(c: 'normal' | 'high'): void;
   setReducedMotion(r: boolean): void;
   setUnread(n: number): void;
+  startWalkthrough(key: string, steps: WalkthroughStep[]): void;
+  advanceWalkthrough(delta?: number): void;
+  endWalkthrough(key?: string): void;
 }
 
 let toastSeq = 1;
@@ -53,6 +68,7 @@ export const useStore = create<UiState>()(
     contrast: (localStorage.getItem('stn.contrast') as 'normal' | 'high') ?? 'normal',
     reducedMotion: localStorage.getItem('stn.reducedMotion') === 'true',
     unreadNotifications: 0,
+    walkthrough: null,
 
     setUser: (user, mfaSetupRequired = false) =>
       set((s) => {
@@ -115,6 +131,24 @@ export const useStore = create<UiState>()(
     setUnread: (n) =>
       set((s) => {
         s.unreadNotifications = n;
+      }),
+    startWalkthrough: (key: string, steps: WalkthroughStep[]) =>
+      set((s) => {
+        if (steps.length === 0) return;
+        s.walkthrough = { key, steps, index: 0 };
+      }),
+    advanceWalkthrough: (delta: number = 1) =>
+      set((s) => {
+        if (!s.walkthrough) return;
+        const next = s.walkthrough.index + delta;
+        if (next < 0) return;
+        if (next >= s.walkthrough.steps.length) s.walkthrough = null;
+        else s.walkthrough.index = next;
+      }),
+    endWalkthrough: (key?: string) =>
+      set((s) => {
+        if (key !== undefined && s.walkthrough?.key !== key) return;
+        s.walkthrough = null;
       }),
   })),
 );

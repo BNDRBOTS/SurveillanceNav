@@ -1,12 +1,15 @@
 /**
- * STN — "Obsidian Lux" design system.
+ * STN — "Obsidian & Champagne" design system.
  *
- * Architecture: deep void backgrounds with violet undertone, not flat black.
- * Surfaces are diamond-glass layers (real transparency + blur).
- * Typography is weight-brutal: display at 900, body at 400, labels at 300.
- * Accent is hypercharged mint-glow, used surgically not splashed.
- * All structural elements are sharp-cornered (0 radius) except pills/badges.
- * Borders are architectural rails, not decoration.
+ * Architecture: deep void backgrounds with a violet undertone — never flat
+ * black. Surfaces are heavy diamond-glass layers (real transparency + blur).
+ * The primary accent is champagne gold: precise, expensive, calm — the
+ * opposite of hacker-green. Jewel tones (violet, cyan, rose, ember) carry
+ * purpose color; gold carries state and focus.
+ * Structural elements are sharp and slanted (parallelogram surfaces live in
+ * base.css); pills and badges stay full-round.
+ * Every color pair below is enforced by scripts/contrast-audit.mjs, which
+ * parses THIS file — change a value here and the gate re-checks it.
  */
 :root {
   /* ── deep void ──────────────────────────────────────────────── */
@@ -15,48 +18,51 @@
   --color-bg-secondary: #08080E;
   --color-bg-tertiary:  #0E0E18;
   --color-border:       rgba(255, 255, 255, 0.06);
-  --color-border-strong: rgba(255, 255, 255, 0.14);
+  /* solid, not alpha — must clear the 3:1 non-text boundary minimum on void */
+  --color-border-strong: #6A7085;
   --color-bg-hover:     rgba(255, 255, 255, 0.04);
   --color-scrim:        rgba(2, 2, 8, 0.80);
 
   /* ── text ───────────────────────────────────────────────────── */
-  --color-text-primary:   #EEEEF2;
-  --color-text-secondary: #737387;
+  --color-text-primary:   #F2F0EA;
+  --color-text-secondary: #A29FB4;
 
   /* ── function palette ──────────────────────────────────────── */
-  --color-accent:        #00F2B4;   /* slightly brighter mint — vivid against void */
-  --color-accent-strong: #00C492;
-  --color-accent-dim:    rgba(0, 242, 180, 0.12);
-  --color-accent-ink:    #021A10;
-  --color-danger:        #FF3B3B;
-  --color-warning:       #F5A623;
-  --color-success:       #2ECC71;
-  --color-focus-ring:    #00F2B4;
+  /* champagne gold — luxury, not neon */
+  --color-accent:        #E9C46A;
+  --color-accent-strong: #F4D98F;
+  --color-accent-dim:    rgba(233, 196, 106, 0.12);
+  --color-accent-ink:    #191204;
+  --accent-rgb:          233, 196, 106;
+  --color-danger:        #FF5C5C;
+  --color-warning:       #F5A83C;
+  --color-success:       #46D68C;
+  --color-focus-ring:    #E9C46A;
 
-  /* ── extended palette ──────────────────────────────────────── */
-  --color-purple: #7C6EF5;
-  --color-cement: #8B96A8;
-  --color-pink:   #F053A0;
-  --color-cyan:   #00D4E8;
-  --color-orange: #FF7B2F;
+  /* ── extended palette — jewel tones for purpose color ───────── */
+  --color-purple: #A18FFF;
+  --color-cement: #9BA3B5;
+  --color-pink:   #F0699C;
+  --color-cyan:   #3FC9DE;
+  --color-orange: #FF8E4D;
 
   /* ── multi-layer glow system ────────────────────────────────── */
   /* far:  ambient halo   — barely visible, creates environment depth   */
   /* mid:  edge glow      — coin-edge blur on close elements             */
   /* sharp: contact light — on actual glowing element surface            */
-  --glow-accent-far:   0 0 60px rgba(0, 242, 180, 0.07);
-  --glow-accent:       0 0 20px rgba(0, 242, 180, 0.28), 0 0 4px rgba(0, 242, 180, 0.6);
-  --glow-accent-sharp: 0 0 6px rgba(0, 242, 180, 0.9), 0 0 1px rgba(255, 255, 255, 0.5);
-  --glow-accent-soft:  0 0 14px rgba(0, 242, 180, 0.14);
-  --glow-danger:       0 0 16px rgba(255, 59, 59, 0.35);
-  --glow-purple:       0 0 16px rgba(124, 110, 245, 0.35);
+  --glow-accent-far:   0 0 60px rgba(233, 196, 106, 0.06);
+  --glow-accent:       0 0 20px rgba(233, 196, 106, 0.26), 0 0 4px rgba(233, 196, 106, 0.55);
+  --glow-accent-sharp: 0 0 6px rgba(233, 196, 106, 0.85), 0 0 1px rgba(255, 255, 255, 0.5);
+  --glow-accent-soft:  0 0 14px rgba(233, 196, 106, 0.14);
+  --glow-danger:       0 0 16px rgba(255, 92, 92, 0.35);
+  --glow-purple:       0 0 16px rgba(161, 143, 255, 0.35);
 
   /* ── diamond glass layers ───────────────────────────────────── */
   /* each layer is progressively more opaque; the "diamond" effect   */
   /* comes from seeing multiple levels of depth through each surface  */
   --glass-ultra:      rgba(255, 255, 255, 0.02);   /* almost invisible — deepest layer */
-  --glass-bg:         rgba(8, 8, 16, 0.55);         /* primary surface                  */
-  --glass-bg-heavy:   rgba(14, 14, 26, 0.78);       /* elevated / modal surface          */
+  --glass-bg:         rgba(10, 9, 16, 0.55);        /* primary surface                  */
+  --glass-bg-heavy:   rgba(15, 14, 24, 0.78);       /* elevated / modal surface          */
   --glass-border:     rgba(255, 255, 255, 0.07);
   --glass-border-lit: rgba(255, 255, 255, 0.13);
   --glass-blur:       blur(28px) saturate(180%) brightness(1.05);
@@ -64,6 +70,11 @@
 
   /* structural left rail used on cards, sidenav items, toasts    */
   --rail-width: 2px;
+
+  /* ── surface slant — the parallelogram language ─────────────── */
+  /* horizontal offset of the slanted vertical edges; subtle, not extreme */
+  --slant: 8px;
+  --slant-sm: 5px;
 
   /* ── typography ─────────────────────────────────────────────── */
   --font-family: "Inter", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
@@ -131,6 +142,7 @@
   --color-accent:        #FFFF00;
   --color-accent-strong: #e6e600;
   --color-accent-ink:    #000;
+  --accent-rgb:          255, 255, 0;
   --color-border:        rgba(255,255,255,0.5);
   --color-border-strong: rgba(255,255,255,0.7);
   --color-focus-ring:    #FFFF00;
@@ -143,6 +155,8 @@
   --glass-border:        rgba(255,255,255,0.4);
   --glass-blur:          none;
   --glass-blur-heavy:    none;
+  --slant: 0px;
+  --slant-sm: 0px;
 }
 
 @media (prefers-contrast: more) {

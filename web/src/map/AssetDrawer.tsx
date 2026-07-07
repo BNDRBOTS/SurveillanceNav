@@ -35,9 +35,11 @@ interface AssetDrawerProps {
   assetId: string;
   onClose: () => void;
   onNavigateAsset: (id: string) => void;
+  /** Open the Directions panel with this asset preset as the destination. */
+  onDirections?: (destination: { label: string; lng: number; lat: number }) => void;
 }
 
-export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerProps): JSX.Element {
+export function AssetDrawer({ assetId, onClose, onNavigateAsset, onDirections }: AssetDrawerProps): JSX.Element {
   const queryClient = useQueryClient();
   const toast = useStore((s) => s.toast);
   const user = useStore((s) => s.user);
@@ -211,6 +213,15 @@ export function AssetDrawer({ assetId, onClose, onNavigateAsset }: AssetDrawerPr
                 ) : null}
 
                 <div className="row-wrap">
+                  {onDirections ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => onDirections({ label: asset.name, lng: asset.lng, lat: asset.lat })}
+                    >
+                      <Icon name="navigation" size={14} /> Directions to here
+                    </button>
+                  ) : null}
                   {user ? (
                     <>
                       <button type="button" className="btn btn-sm btn-danger" onClick={() => setDisputeOpen(true)}>

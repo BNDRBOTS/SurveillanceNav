@@ -124,7 +124,7 @@ function NotificationsBell(): JSX.Element {
                     borderTop: 'none', borderRight: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
                     borderLeft: n.readAt ? '2px solid transparent' : '2px solid var(--color-accent)',
                     opacity: n.readAt ? 0.5 : 1,
-                    background: n.readAt ? 'transparent' : 'rgba(0,229,168,0.04)',
+                    background: n.readAt ? 'transparent' : 'rgba(var(--accent-rgb),0.06)',
                     cursor: 'pointer', color: 'inherit', font: 'inherit',
                     transition: 'background var(--motion-duration-fast)',
                   }}
@@ -279,6 +279,9 @@ export function TopBar(): JSX.Element {
                 </div>
                 <Link to="/settings" onClick={() => setMenuOpen(false)}>
                   Settings & privacy
+                </Link>
+                <Link to="/help" onClick={() => setMenuOpen(false)}>
+                  Help &amp; walkthroughs
                 </Link>
                 <Link to="/support" onClick={() => setMenuOpen(false)}>
                   Support the project

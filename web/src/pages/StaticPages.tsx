@@ -4,7 +4,7 @@ import { Modal } from '@/components/Modal';
 
 export function PrivacyPage(): JSX.Element {
   return (
-    <div className="page" style={{ maxWidth: 760 }}>
+    <div className="page" style={{ maxWidth: 880 }}>
       <h1>Privacy & data practices</h1>
       <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
         A transparency platform must be transparent about itself. This page is the plain-language, complete inventory.
@@ -75,7 +75,7 @@ export function PrivacyPage(): JSX.Element {
 
 export function TermsPage(): JSX.Element {
   return (
-    <div className="page" style={{ maxWidth: 760 }}>
+    <div className="page" style={{ maxWidth: 880 }}>
       <h1>Terms &amp; acceptable use</h1>
       <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
         Plain-language terms for using Lens of Light. By creating an account or contributing, you agree to these.
@@ -146,7 +146,7 @@ const SUPPORT_LINKS = {
 
 export function SupportPage(): JSX.Element {
   return (
-    <div className="page" style={{ maxWidth: 760 }}>
+    <div className="page" style={{ maxWidth: 880 }}>
       <h1>Support Lens of Light</h1>
       <p className="text-sm text-secondary" style={{ margin: 'var(--space-sm) 0 var(--space-lg)' }}>
         The map, navigation, and FOIA tools are free to use. The project runs on donations right now — if it’s
@@ -244,6 +244,10 @@ const TOUR_STEPS = [
   {
     title: 'Works offline',
     body: 'The basemap is bundled, data is cached with integrity checks, and submissions made offline are queued and synced automatically. Install the app from your browser menu for the full experience.',
+  },
+  {
+    title: 'Guided tours are everywhere',
+    body: 'Each section plays a short walkthrough on your first visit, and you can replay any of them from Help & walkthroughs in the sidebar or account menu whenever you want a refresher.',
   },
 ];
 

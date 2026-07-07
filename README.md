@@ -54,7 +54,7 @@ server/   Fastify 5 (TS strict) · PostgreSQL/PostGIS (lat/lng haversine fallbac
           Redis cache w/ in-memory failover + circuit breaker · DB-backed job queue + scheduler
           local-FS or S3 (hand-rolled SigV4) storage · SMTP or JSONL-outbox mail
 web/      Vite + React 18 (TS strict) · Zustand + TanStack Query · MapLibre GL + Supercluster
-          token-driven CSS design system ("Void & Glow") · hand-written SW + IndexedDB offline layer
+          token-driven CSS design system ("Obsidian & Champagne") · hand-written SW + IndexedDB offline layer
 ```
 
 **Documented stack choices** (where the spec allowed alternatives):

@@ -9,8 +9,10 @@ import { Modal } from '@/components/Modal';
 import { TextInput, TextArea } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { useDebounce } from '@/lib/useDebounce';
+import { useWalkthrough } from '@/lib/tours';
 
 export default function PoliciesPage(): JSX.Element {
+  useWalkthrough('policies');
   const user = useStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [compare, setCompare] = useState<Jurisdiction[]>([]);

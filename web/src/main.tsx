@@ -13,6 +13,7 @@ import {
   LazyReportsPage,
   LazyAdminPage,
   LazySettingsPage,
+  LazyHelpPage,
 } from './App';
 import { LoginPage, SignupPage, ResetPasswordPage, MfaSetupPage, InvitePage } from '@/pages/AuthPages';
 import { FoiaListPage, FoiaNewPage, FoiaDetailPage } from '@/pages/FoiaPages';
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: '/workspaces/:id', element: <WorkspaceDetailPage /> },
       { path: '/admin', element: <LazyAdminPage /> },
       { path: '/settings', element: <LazySettingsPage /> },
+      { path: '/help', element: <LazyHelpPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
       { path: '/terms', element: <TermsPage /> },
       { path: '/support', element: <SupportPage /> },

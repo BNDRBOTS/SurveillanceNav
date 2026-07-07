@@ -7,10 +7,12 @@ import { TextInput, PasswordInput } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { ConfirmDialog } from '@/components/Modal';
 import { clearDatasets } from '@/lib/offline';
+import { useWalkthrough } from '@/lib/tours';
 import { useQuery } from '@tanstack/react-query';
 import type { AuthTokens, UserPublic } from '@stn/shared';
 
 export default function SettingsPage(): JSX.Element {
+  useWalkthrough('settings');
   const user = useStore((s) => s.user);
   const toast = useStore((s) => s.toast);
   const contrast = useStore((s) => s.contrast);
@@ -58,7 +60,7 @@ export default function SettingsPage(): JSX.Element {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 880 }}>
+    <div className="page" style={{ maxWidth: 1080 }}>
       <div className="page-header">
         <h1>Settings & privacy</h1>
       </div>

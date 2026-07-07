@@ -5,6 +5,7 @@ coverage/
 .env
 .env.local
 server/var/
+var/storage/
 web/dev-dist/
 .DS_Store
 playwright-report/

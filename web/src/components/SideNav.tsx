@@ -2,19 +2,21 @@ import { NavLink } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { Icon, type IconName } from './Icon';
 
-const NAV_ITEMS: Array<{ to: string; label: string; icon: IconName; color: string }> = [
-  { to: '/map',         label: 'Map',         icon: 'map',       color: '#00E5A8' },
-  { to: '/foia',        label: 'FOIA',        icon: 'mail',      color: '#FFB347' },
-  { to: '/procurement', label: 'Procurement', icon: 'file-text', color: '#19D3DA' },
-  { to: '/policies',    label: 'Policies',    icon: 'scale',     color: '#8B7CF6' },
-  { to: '/reports',     label: 'Reports',     icon: 'download',  color: '#FF8E3C' },
-  { to: '/workspaces',  label: 'Workspaces',  icon: 'users',     color: '#FF5CA8' },
+/* Icons carry their own purpose hue (see Icon.tsx tone map); active route
+   gets full presence + glow, inactive stays colored but recedes. */
+const NAV_ITEMS: Array<{ to: string; label: string; icon: IconName }> = [
+  { to: '/map',         label: 'Map',         icon: 'map' },
+  { to: '/foia',        label: 'FOIA',        icon: 'mail' },
+  { to: '/procurement', label: 'Procurement', icon: 'file-text' },
+  { to: '/policies',    label: 'Policies',    icon: 'scale' },
+  { to: '/reports',     label: 'Reports',     icon: 'download' },
+  { to: '/workspaces',  label: 'Workspaces',  icon: 'users' },
 ];
 
 export function SideNav(): JSX.Element {
   const user = useStore((s) => s.user);
   const items = user?.role === 'admin'
-    ? [...NAV_ITEMS, { to: '/admin', label: 'Admin', icon: 'shield' as IconName, color: '#FF4D4D' }]
+    ? [...NAV_ITEMS, { to: '/admin', label: 'Admin', icon: 'shield' as IconName }]
     : NAV_ITEMS;
   return (
     <nav className="sidenav" aria-label="Primary">
@@ -22,20 +24,20 @@ export function SideNav(): JSX.Element {
         <NavLink key={item.to} to={item.to}>
           {({ isActive }) => (
             <>
-              <Icon
-                name={item.icon}
-                style={{
-                  color: item.color,
-                  opacity: isActive ? 1 : 0.7,
-                  filter: isActive ? `drop-shadow(0 0 6px ${item.color}66)` : 'none',
-                }}
-              />
+              <Icon name={item.icon} glow={isActive} style={{ opacity: isActive ? 1 : 0.78 }} />
               {item.label}
             </>
           )}
         </NavLink>
       ))}
       <span className="spacer" />
+      <NavLink to="/help" className="text-xs">
+        {({ isActive }) => (
+          <>
+            <Icon name="compass" size={16} glow={isActive} /> Help & tours
+          </>
+        )}
+      </NavLink>
       <a href="/docs" target="_blank" rel="noreferrer" className="text-xs">
         <Icon name="code" size={16} /> API reference
       </a>
@@ -46,14 +48,14 @@ export function SideNav(): JSX.Element {
 /** Mobile bottom tab bar — primary destinations stay in the thumb zone. */
 export function BottomNav(): JSX.Element {
   const user = useStore((s) => s.user);
-  const mobile: Array<{ to: string; label: string; icon: IconName; color: string }> = [
-    { to: '/map',         label: 'Map',     icon: 'map',       color: '#00E5A8' },
-    { to: '/foia',        label: 'FOIA',    icon: 'mail',      color: '#FFB347' },
-    { to: '/procurement', label: 'Procure', icon: 'file-text', color: '#19D3DA' },
-    { to: '/reports',     label: 'Reports', icon: 'download',  color: '#FF8E3C' },
+  const mobile: Array<{ to: string; label: string; icon: IconName }> = [
+    { to: '/map',         label: 'Map',     icon: 'map' },
+    { to: '/foia',        label: 'FOIA',    icon: 'mail' },
+    { to: '/procurement', label: 'Procure', icon: 'file-text' },
+    { to: '/reports',     label: 'Reports', icon: 'download' },
     user?.role === 'admin'
-      ? { to: '/admin',    label: 'Admin',    icon: 'shield' as IconName, color: '#FF4D4D' }
-      : { to: '/policies', label: 'Policies', icon: 'scale',              color: '#8B7CF6' },
+      ? { to: '/admin',    label: 'Admin',    icon: 'shield' as IconName }
+      : { to: '/policies', label: 'Policies', icon: 'scale' },
   ];
   return (
     <nav className="bottomnav" aria-label="Primary">
@@ -61,15 +63,7 @@ export function BottomNav(): JSX.Element {
         <NavLink key={item.to} to={item.to}>
           {({ isActive }) => (
             <>
-              <Icon
-                name={item.icon}
-                size={22}
-                style={{
-                  color: item.color,
-                  opacity: isActive ? 1 : 0.7,
-                  filter: isActive ? `drop-shadow(0 0 6px ${item.color}66)` : 'none',
-                }}
-              />
+              <Icon name={item.icon} size={22} glow={isActive} style={{ opacity: isActive ? 1 : 0.78 }} />
               {item.label}
             </>
           )}

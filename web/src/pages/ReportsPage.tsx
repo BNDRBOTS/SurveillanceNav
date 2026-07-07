@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { Select } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { haptics } from '@/lib/haptics';
+import { useWalkthrough } from '@/lib/tours';
 
 const RESOURCES = [
   { id: 'assets', label: 'Surveillance assets (public data)' },
@@ -28,6 +29,7 @@ const FORMAT_HINTS: Record<string, string> = {
 };
 
 export default function ReportsPage(): JSX.Element {
+  useWalkthrough('reports');
   const toast = useStore((s) => s.toast);
   const user = useStore((s) => s.user);
   const workspaceId = useStore((s) => s.currentWorkspaceId);

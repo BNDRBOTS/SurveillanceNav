@@ -20,10 +20,12 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { TextInput, TextArea, Select, FileDrop } from '@/components/Form';
 import { ConfirmDialog } from '@/components/Modal';
 import { useDebounce } from '@/lib/useDebounce';
+import { useWalkthrough } from '@/lib/tours';
 
 /* ------------------------------- list ------------------------------- */
 
 export function FoiaListPage(): JSX.Element {
+  useWalkthrough('foia');
   const workspaceId = useStore((s) => s.currentWorkspaceId);
   const navigate = useNavigate();
   const [status, setStatus] = useState('');
@@ -200,7 +202,7 @@ export function FoiaNewPage(): JSX.Element {
   };
 
   return (
-    <div className="page" style={{ maxWidth: 860 }}>
+    <div className="page" style={{ maxWidth: 980 }}>
       <div className="page-header">
         <h1>New public records request</h1>
       </div>
@@ -386,7 +388,7 @@ export function FoiaDetailPage(): JSX.Element {
   const overdue = foia.dueAt && ['sent', 'acknowledged'].includes(foia.status) && new Date(foia.dueAt).getTime() < Date.now();
 
   return (
-    <div className="page" style={{ maxWidth: 900 }}>
+    <div className="page" style={{ maxWidth: 1000 }}>
       <div className="page-header">
         <div className="col" style={{ gap: 4 }}>
           <Link to="/foia" className="text-sm text-secondary">

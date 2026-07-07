@@ -23,10 +23,55 @@ function ToastItem({ toast }: { toast: Toast }): JSX.Element {
   );
 }
 
+/* --------------------------- walkthroughs ----------------------------- */
+
+/** Toast-styled guided tour card: step counter, Back/Next, skippable. */
+function WalkthroughCard(): JSX.Element | null {
+  const wt = useStore((s) => s.walkthrough);
+  const advance = useStore((s) => s.advanceWalkthrough);
+  const end = useStore((s) => s.endWalkthrough);
+  useEffect(() => {
+    if (wt) announce(`${wt.steps[wt.index]!.title}. ${wt.steps[wt.index]!.body}`);
+  }, [wt]);
+  if (!wt) return null;
+  const step = wt.steps[wt.index]!;
+  const last = wt.index === wt.steps.length - 1;
+  return (
+    <div className="toast walkthrough" role="status">
+      <div className="col" style={{ gap: 'var(--space-xxs)', flex: 1 }}>
+        <span className="kicker">
+          Walkthrough · {wt.index + 1} / {wt.steps.length}
+        </span>
+        <strong>{step.title}</strong>
+        <p className="text-sm text-secondary" style={{ margin: 0 }}>
+          {step.body}
+        </p>
+        <div className="row" style={{ marginTop: 'var(--space-xs)', justifyContent: 'flex-end' }}>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => end()}>
+            Skip tour
+          </button>
+          {wt.index > 0 ? (
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => advance(-1)}>
+              Back
+            </button>
+          ) : null}
+          <button type="button" className="btn btn-sm btn-primary" onClick={() => advance(1)}>
+            {last ? 'Done' : 'Next'}
+          </button>
+        </div>
+      </div>
+      <button type="button" onClick={() => end()} aria-label="Dismiss walkthrough">
+        <Icon name="x" size={16} />
+      </button>
+    </div>
+  );
+}
+
 export function Toasts(): JSX.Element {
   const toasts = useStore((s) => s.toasts);
   return (
     <div className="toasts">
+      <WalkthroughCard />
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} />
       ))}

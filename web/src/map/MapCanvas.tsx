@@ -55,6 +55,45 @@ const CIRCLE_COLOR_EXPR: maplibregl.ExpressionSpecification = [
   '#8A9099',
 ] as never;
 
+/* Shared layer specs — the initial `load` and every style switch must add
+   identical layers, or paint properties silently diverge between the two paths. */
+const ASSET_POINTS_LAYER = {
+  id: 'asset-points',
+  type: 'circle',
+  source: 'assets',
+  filter: ['!', ['has', 'cluster']],
+  paint: {
+    'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 4, 13, 7, 17, 10],
+    'circle-color': CIRCLE_COLOR_EXPR,
+    'circle-stroke-width': 1.4,
+    'circle-stroke-color': '#050505',
+    'circle-opacity': ['case', ['==', ['get', 'status'], 'retired'], 0.45, 0.92],
+  },
+} as const;
+
+const assetHeatLayer = (visible: boolean) =>
+  ({
+    id: 'asset-heat',
+    type: 'heatmap',
+    source: 'assets',
+    layout: { visibility: visible ? 'visible' : 'none' },
+    paint: {
+      'heatmap-weight': ['coalesce', ['get', 'count'], 1],
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 4, 0.7, 14, 2.2],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 4, 14, 14, 34],
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0, 'rgba(233,196,106,0)',
+        0.25, 'rgba(233,196,106,0.35)',
+        0.5, 'rgba(224,166,74,0.55)',
+        0.75, 'rgba(255,179,71,0.75)',
+        1, 'rgba(255,77,77,0.9)',
+      ],
+    },
+  }) as const;
+
 export function MapCanvas({
   data,
   baseStyle,
@@ -109,40 +148,8 @@ export function MapCanvas({
 
     map.on('load', () => {
       map.addSource('assets', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({
-        id: 'asset-points',
-        type: 'circle',
-        source: 'assets',
-        filter: ['!', ['has', 'cluster']],
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 4, 13, 7, 17, 10],
-          'circle-color': CIRCLE_COLOR_EXPR,
-          'circle-stroke-width': 1.4,
-          'circle-stroke-color': '#050505',
-          'circle-opacity': ['case', ['==', ['get', 'status'], 'retired'], 0.45, 0.92],
-        },
-      });
-      map.addLayer({
-        id: 'asset-heat',
-        type: 'heatmap',
-        source: 'assets',
-        layout: { visibility: 'none' },
-        paint: {
-          'heatmap-weight': ['coalesce', ['get', 'count'], 1],
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 4, 0.7, 14, 2.2],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 4, 14, 14, 34],
-          'heatmap-color': [
-            'interpolate',
-            ['linear'],
-            ['heatmap-density'],
-            0, 'rgba(0,229,168,0)',
-            0.25, 'rgba(0,229,168,0.35)',
-            0.5, 'rgba(0,184,140,0.55)',
-            0.75, 'rgba(255,179,71,0.75)',
-            1, 'rgba(255,77,77,0.9)',
-          ],
-        },
-      });
+      map.addLayer(ASSET_POINTS_LAYER as never);
+      map.addLayer(assetHeatLayer(false) as never);
 
       map.on('click', 'asset-points', (e) => {
         if (pickModeRef.current) return;
@@ -210,35 +217,8 @@ export function MapCanvas({
     map.once('styledata', () => {
       if (!map.getSource('assets')) {
         map.addSource('assets', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-        map.addLayer({
-          id: 'asset-points',
-          type: 'circle',
-          source: 'assets',
-          filter: ['!', ['has', 'cluster']],
-          paint: {
-            'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 4, 13, 7, 17, 10],
-            'circle-color': CIRCLE_COLOR_EXPR,
-            'circle-stroke-width': 1.4,
-            'circle-stroke-color': '#050505',
-          },
-        });
-        map.addLayer({
-          id: 'asset-heat',
-          type: 'heatmap',
-          source: 'assets',
-          layout: { visibility: layers.heatmap ? 'visible' : 'none' },
-          paint: {
-            'heatmap-weight': ['coalesce', ['get', 'count'], 1],
-            'heatmap-color': [
-              'interpolate',
-              ['linear'],
-              ['heatmap-density'],
-              0, 'rgba(0,229,168,0)',
-              0.5, 'rgba(0,184,140,0.55)',
-              1, 'rgba(255,77,77,0.9)',
-            ],
-          },
-        });
+        map.addLayer(ASSET_POINTS_LAYER as never);
+        map.addLayer(assetHeatLayer(layers.heatmap) as never);
       }
       setDataNonce((n) => n + 1); // re-render data into the fresh style
     });
@@ -285,7 +265,7 @@ export function MapCanvas({
       const el = document.createElement('button');
       el.type = 'button';
       const size = Math.min(58, 26 + Math.log2(count + 1) * 5.5);
-      el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:2px solid var(--color-accent);background:rgba(0,229,168,0.16);backdrop-filter:blur(2px);color:var(--color-text-primary);font:600 ${count > 999 ? 10 : 12}px/1 var(--font-family);cursor:pointer;display:flex;align-items:center;justify-content:center;`;
+      el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:2px solid var(--color-accent);background:rgba(var(--accent-rgb),0.16);backdrop-filter:blur(2px);color:var(--color-text-primary);font:600 ${count > 999 ? 10 : 12}px/1 var(--font-family);cursor:pointer;display:flex;align-items:center;justify-content:center;`;
       el.textContent = count > 9999 ? `${Math.round(count / 1000)}k` : String(count);
       el.setAttribute('aria-label', `Cluster of ${count} assets — activate to zoom in`);
       el.addEventListener('click', (ev) => {
@@ -397,7 +377,7 @@ export function MapCanvas({
         id: 'route-avoid', type: 'line', source: 'route',
         filter: ['==', ['get', 'kind'], 'avoid'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#00E5A8', 'line-width': 4.5 },
+        paint: { 'line-color': '#E9C46A', 'line-width': 4.5 },
       }, before);
       map.addLayer({
         id: 'route-exposed-halo', type: 'circle', source: 'route-exposed',
@@ -434,10 +414,10 @@ export function MapCanvas({
       routeMarkersRef.current.push(new Marker({ element: el }).setLngLat([lng, lat]).addTo(map));
     };
     if (route?.origin) pin(route.origin.lng, route.origin.lat, 'A', '#F4F4F2', '#050505');
-    if (route?.destination) pin(route.destination.lng, route.destination.lat, 'B', '#00E5A8', '#03251B');
+    if (route?.destination) pin(route.destination.lng, route.destination.lat, 'B', '#E9C46A', '#191204');
     if (route?.position) {
       const el = document.createElement('div');
-      el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#00E5A8;border:3px solid #050505;box-shadow:0 0 0 6px rgba(0,229,168,0.3), var(--glow-accent);';
+      el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#E9C46A;border:3px solid #050505;box-shadow:0 0 0 6px rgba(233,196,106,0.3), var(--glow-accent);';
       el.setAttribute('aria-label', 'Your position');
       routeMarkersRef.current.push(new Marker({ element: el }).setLngLat([route.position.lng, route.position.lat]).addTo(map));
     }
@@ -480,7 +460,7 @@ export function MapCanvas({
         userMarkerRef.current?.remove();
         const el = document.createElement('div');
         el.style.cssText =
-          'width:16px;height:16px;border-radius:50%;background:var(--color-accent);border:3px solid #fff;box-shadow:0 0 0 6px rgba(0,229,168,0.25);';
+          'width:16px;height:16px;border-radius:50%;background:var(--color-accent);border:3px solid #fff;box-shadow:0 0 0 6px rgba(var(--accent-rgb),0.25);';
         el.setAttribute('aria-label', 'Your location');
         userMarkerRef.current = new Marker({ element: el }).setLngLat([longitude, latitude]).addTo(map);
         map.easeTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), 14) });

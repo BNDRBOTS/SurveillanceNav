@@ -24,6 +24,7 @@ import { TextInput, Select } from '@/components/Form';
 import { haptics } from '@/lib/haptics';
 import { NavigatePanel, type NavEndpoint } from '@/map/NavigatePanel';
 import { useNavigation } from '@/map/useNavigation';
+import { useWalkthrough } from '@/lib/tours';
 
 const DEFAULT_CAMERA = { lng: -96.9, lat: 38.5, zoom: 4 };
 
@@ -43,6 +44,7 @@ function filtersFromParams(params: URLSearchParams): MapFilters {
 }
 
 export default function MapPage(): JSX.Element {
+  useWalkthrough('map');
   const [params, setParams] = useSearchParams();
   const user = useStore((s) => s.user);
   const toast = useStore((s) => s.toast);
@@ -219,7 +221,7 @@ export default function MapPage(): JSX.Element {
         <button
           type="button"
           className={`btn btn-sm ${navOpen ? 'btn-primary' : ''}`}
-          style={{ boxShadow: 'var(--shadow-2)' }}
+         
           aria-expanded={navOpen}
           onClick={() => {
             setNavOpen((o) => !o);
@@ -228,17 +230,17 @@ export default function MapPage(): JSX.Element {
         >
           <Icon name="navigation" size={16} /> Directions
         </button>
-        <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
+        <button type="button" className="btn btn-sm" onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
           <Icon name="filter" size={16} /> Filters{filters.technologyType.length + filters.status.length > 0 ? ` (${filters.technologyType.length + filters.status.length})` : ''}
         </button>
-        <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setLayersOpen(true)}>
+        <button type="button" className="btn btn-sm" onClick={() => setLayersOpen(true)}>
           <Icon name="layers" size={16} /> Layers
         </button>
-        <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setNearbyOpen(true)}>
+        <button type="button" className="btn btn-sm" onClick={() => setNearbyOpen(true)}>
           <Icon name="target" size={16} /> Nearby
         </button>
         {user ? (
-          <button type="button" className="btn btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => setPresetsOpen(true)}>
+          <button type="button" className="btn btn-sm" onClick={() => setPresetsOpen(true)}>
             <Icon name="star" size={16} /> Views
           </button>
         ) : null}
@@ -246,7 +248,7 @@ export default function MapPage(): JSX.Element {
           <button
             type="button"
             className={`btn btn-sm ${addMode ? 'btn-primary' : ''}`}
-            style={{ boxShadow: 'var(--shadow-2)' }}
+           
             onClick={() => {
               setAddMode((m) => !m);
               if (!addMode) toast('Tap the map where the asset is located.', 'info', 4000);
@@ -258,7 +260,7 @@ export default function MapPage(): JSX.Element {
         ) : null}
         <select
           className="input"
-          style={{ minHeight: 34, width: 'auto', boxShadow: 'var(--shadow-2)', fontSize: 'var(--font-size-xs)' }}
+          style={{ minHeight: 34, width: 'auto', fontSize: 'var(--font-size-xs)' }}
           aria-label="Base map style"
           value={baseStyle}
           onChange={(e) => {
@@ -334,7 +336,17 @@ export default function MapPage(): JSX.Element {
       ) : null}
 
       {selectedAsset ? (
-        <AssetDrawer assetId={selectedAsset} onClose={() => setSelectedAsset(null)} onNavigateAsset={(id) => setSelectedAsset(id)} />
+        <AssetDrawer
+          assetId={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          onNavigateAsset={(id) => setSelectedAsset(id)}
+          onDirections={(dest) => {
+            setSelectedAsset(null);
+            setFiltersOpen(false);
+            setNavDestination(dest);
+            setNavOpen(true);
+          }}
+        />
       ) : null}
 
       {addLocation ? (

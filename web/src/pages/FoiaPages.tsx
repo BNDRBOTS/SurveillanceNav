@@ -26,6 +26,7 @@ import { useWalkthrough } from '@/lib/tours';
 
 export function FoiaListPage(): JSX.Element {
   useWalkthrough('foia');
+  const user = useStore((s) => s.user);
   const workspaceId = useStore((s) => s.currentWorkspaceId);
   const navigate = useNavigate();
   const [status, setStatus] = useState('');
@@ -38,10 +39,33 @@ export function FoiaListPage(): JSX.Element {
       get<Paginated<FoiaRequest>>(
         `/foia?pageSize=100${workspaceId ? `&workspaceId=${workspaceId}` : ''}${status ? `&status=${status}` : ''}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`,
       ),
+    enabled: !!user, // the tracker is per-account; don't fire a doomed 401 for visitors
   });
 
   const overdue = (f: FoiaRequest) =>
     f.dueAt && ['sent', 'acknowledged'].includes(f.status) && new Date(f.dueAt).getTime() < Date.now();
+
+  if (!user) {
+    return (
+      <div className="page">
+        <div className="page-header">
+          <div>
+            <h1>FOIA tracker</h1>
+            <p className="text-sm text-secondary">Public records requests with statutory deadlines, documents, and outcomes.</p>
+          </div>
+        </div>
+        <EmptyState
+          title="Sign in to track public-records requests"
+          hint="The builder writes the request, cites the correct statute for the jurisdiction, and follows the legal response deadline for you."
+          action={
+            <Link to="/login" className="btn btn-primary">
+              Sign in
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page">

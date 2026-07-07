@@ -54,8 +54,8 @@ function writePng(file, size, draw) {
   console.log(`icons: ${file} (${png.length} bytes)`);
 }
 
-const BG = [11, 15, 20, 255];
-const MINT = [0, 229, 168, 255];
+const BG = [4, 4, 7, 255];
+const GOLD = [233, 196, 106, 255];
 
 function drawLens(px, size, { pad = 0 } = {}) {
   const set = (x, y, [r, g, b, a]) => {
@@ -78,12 +78,12 @@ function drawLens(px, size, { pad = 0 } = {}) {
     for (let x = 0; x < size; x += 1) {
       set(x, y, BG);
       const d = Math.hypot(x - cx, y - cy);
-      if (Math.abs(d - rOuter) <= ring) set(x, y, MINT);
-      if (d <= rInner) set(x, y, MINT);
+      if (Math.abs(d - rOuter) <= ring) set(x, y, GOLD);
+      if (d <= rInner) set(x, y, GOLD);
       // crosshair ticks
       const along = (v, c) => Math.abs(v - c) <= tick;
       const inTickRange = d >= rOuter + ring * 1.6 && d <= usable * 0.97;
-      if (inTickRange && (along(x, cx) || along(y, cy))) set(x, y, MINT);
+      if (inTickRange && (along(x, cx) || along(y, cy))) set(x, y, GOLD);
     }
   }
 }

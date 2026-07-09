@@ -4,11 +4,12 @@ import { useStore } from '@/lib/store';
 import { get, patch, post, del, ApiError } from '@/lib/api';
 import { applySession, logout } from '@/lib/auth';
 import { TextInput, PasswordInput } from '@/components/Form';
+import { RecoveryCodesCard } from '@/pages/AuthPages';
 import { Icon } from '@/components/Icon';
 import { ConfirmDialog } from '@/components/Modal';
 import { clearDatasets } from '@/lib/offline';
 import { useWalkthrough } from '@/lib/tours';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AuthTokens, UserPublic } from '@stn/shared';
 
 export default function SettingsPage(): JSX.Element {
@@ -142,6 +143,8 @@ export default function SettingsPage(): JSX.Element {
             Sign out all devices
           </button>
         </div>
+
+        <RecoveryCodesSettingsCard />
 
         <BillingCard isAdmin={user.role === 'admin'} />
 
@@ -326,6 +329,67 @@ function BillingCard({ isAdmin }: { isAdmin: boolean }): JSX.Element | null {
           <p className="text-xs text-secondary">Card handled entirely by Stripe — we never see your number. Cancel anytime.</p>
         </>
       )}
+    </div>
+  );
+}
+
+
+/* --------------------------- recovery codes --------------------------- */
+
+function RecoveryCodesSettingsCard(): JSX.Element {
+  const toast = useStore((s) => s.toast);
+  const queryClient = useQueryClient();
+  const [password, setPassword] = useState('');
+  const [fresh, setFresh] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const { data } = useQuery({
+    queryKey: ['recovery-codes'],
+    queryFn: () => get<{ remaining: number; generatedAt: string | null }>('/auth/recovery-codes'),
+  });
+
+  const regenerate = async () => {
+    setBusy(true);
+    try {
+      const res = await post<{ recoveryCodes: string[] }>('/auth/recovery-codes', { currentPassword: password });
+      setFresh(res.recoveryCodes);
+      setPassword('');
+      void queryClient.invalidateQueries({ queryKey: ['recovery-codes'] });
+    } catch (err) {
+      toast((err as ApiError).message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (fresh) {
+    return <RecoveryCodesCard codes={fresh} onDone={() => setFresh(null)} />;
+  }
+
+  return (
+    <div className="card col">
+      <h2>Recovery codes</h2>
+      <p className="text-sm text-secondary">
+        One-time codes that get you back in if you lose your email or authenticator. Each works once; regenerating
+        invalidates any unused ones.
+      </p>
+      <p className="text-sm">
+        <strong className="text-accent">{data?.remaining ?? '—'}</strong> unused code{data?.remaining === 1 ? '' : 's'} remaining
+      </p>
+      {(data?.remaining ?? 10) <= 3 ? (
+        <p className="text-sm text-warning">Running low — regenerate a fresh set soon.</p>
+      ) : null}
+      <div className="row-wrap" style={{ alignItems: 'flex-end' }}>
+        <PasswordInput label="Current password" value={password} onChange={setPassword} autoComplete="current-password" />
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ marginBottom: 'var(--space-md)' }}
+          disabled={busy || password.length === 0}
+          onClick={() => void regenerate()}
+        >
+          {busy ? 'Generating…' : 'Regenerate codes'}
+        </button>
+      </div>
     </div>
   );
 }

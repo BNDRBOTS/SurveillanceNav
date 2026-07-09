@@ -25,6 +25,17 @@ import { badRequest, unauthorized, conflict, forbidden } from '../lib/errors.js'
 import { audit } from '../services/audit.js';
 import { sendMail } from '../services/mailer.js';
 import { requireAuth, requireCsrf, invalidateUserStatusCache } from '../plugins/auth.js';
+import { withMinDuration } from '../lib/timing.js';
+import { cachedJson } from '../cache/index.js';
+import {
+  generateRecoveryCodes,
+  remainingRecoveryCodes,
+  redeemRecoveryCode,
+} from '../auth/recovery.js';
+import {
+  resetViaRecoverySchema,
+  regenerateRecoverySchema,
+} from '@stn/shared';
 
 interface DbUser {
   id: string;
@@ -104,6 +115,23 @@ async function issueSession(
 const LOCK_THRESHOLD = 5;
 const LOCK_MINUTES = 15;
 
+/**
+ * How the reset-request endpoint discloses account existence.
+ *  - 'email' (default): neutral screen; the tried address is told by email.
+ *  - 'on-screen': the page states registered/not-registered directly.
+ * Runtime-switchable via admin setting `auth.resetDisclosure`; env
+ * RESET_DISCLOSURE_MODE sets the boot default.
+ */
+async function resetDisclosureMode(): Promise<'email' | 'on-screen'> {
+  return cachedJson('settings:resetDisclosure', 15, async () => {
+    const row = await queryOne<{ value: { mode?: string } }>(
+      `SELECT value FROM app_settings WHERE key = 'auth.resetDisclosure'`,
+    );
+    const mode = row?.value?.mode ?? config.resetDisclosureMode;
+    return mode === 'on-screen' ? 'on-screen' : 'email';
+  });
+}
+
 export function registerAuthRoutes(app: FastifyInstance): void {
   app.post('/auth/signup', async (req, reply) => {
     const body = parseOrThrow(signupSchema, req.body);
@@ -144,13 +172,16 @@ export function registerAuthRoutes(app: FastifyInstance): void {
         (wsRows[0] as { id: string }).id,
         created.id,
       ]);
-      return created;
+      const recoveryCodes = await generateRecoveryCodes(created.id, tx);
+      return { created, recoveryCodes };
     });
 
-    await audit({ actorId: user.id, action: 'auth.signup', resource: 'user', resourceId: user.id, ip: req.ip, userAgent: req.headers['user-agent'] });
+    await audit({ actorId: user.created.id, action: 'auth.signup', resource: 'user', resourceId: user.created.id, ip: req.ip, userAgent: req.headers['user-agent'] });
     // Admins must enroll MFA before receiving full access.
-    const needsMfa = user.role === 'admin' && !user.mfa_enabled;
-    return reply.status(201).send(await issueSession(reply, user, req, { mfaSetupRequired: needsMfa }));
+    const needsMfa = user.created.role === 'admin' && !user.created.mfa_enabled;
+    const session = await issueSession(reply, user.created, req, { mfaSetupRequired: needsMfa });
+    // Plaintext recovery codes exist only in this response — shown once, saved by the user.
+    return reply.status(201).send({ ...session, recoveryCodes: user.recoveryCodes });
   });
 
   app.post('/auth/login', async (req, reply) => {
@@ -188,12 +219,23 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     if (!(await verifyPassword(body.password, user.password_hash))) return fail('bad_password');
 
     if (user.mfa_enabled) {
-      if (!body.totp) {
-        return reply.status(401).send({
-          error: { code: 'mfa_required', message: 'Enter the 6-digit code from your authenticator app.' },
+      if (body.recoveryCode) {
+        const redeemed = await redeemRecoveryCode(user.id, body.recoveryCode);
+        if (!redeemed) return fail('bad_recovery_code');
+        await audit({ actorId: user.id, action: 'auth.recovery_code_used', resource: 'user', resourceId: user.id, metadata: { remaining: redeemed.remaining, context: 'login' }, ip: req.ip });
+        await sendMail({
+          to: user.email,
+          subject: 'A recovery code was used on your account',
+          text: `Hi ${user.name},\n\nA one-time recovery code was just used to sign in to your Lens of Light account. ${redeemed.remaining} unused code${redeemed.remaining === 1 ? '' : 's'} remain.\n\nIf this was you: consider regenerating a fresh set in Settings → Recovery codes.\nIf this was NOT you: reset your password immediately and revoke all sessions from Settings.`,
         });
+      } else {
+        if (!body.totp) {
+          return reply.status(401).send({
+            error: { code: 'mfa_required', message: 'Enter the 6-digit code from your authenticator app — or use a saved recovery code.' },
+          });
+        }
+        if (!user.mfa_secret || !verifyTotp(user.mfa_secret, body.totp)) return fail('bad_totp');
       }
-      if (!user.mfa_secret || !verifyTotp(user.mfa_secret, body.totp)) return fail('bad_totp');
     }
 
     await query(
@@ -314,23 +356,93 @@ export function registerAuthRoutes(app: FastifyInstance): void {
       return { ok: true, message: 'Password updated. Sign in with your new password.' };
     }
 
-    const { email } = parseOrThrow(resetRequestSchema, body);
-    const user = await queryOne<DbUser>(`SELECT * FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL`, [email]);
-    if (user) {
-      const token = randomToken(32);
-      await query(
-        `INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '1 hour')`,
-        [user.id, sha256Hex(token)],
-      );
-      await sendMail({
-        to: user.email,
-        subject: 'Reset your Lens of Light password',
-        text: `Hi ${user.name},\n\nReset your password within 1 hour:\n${config.publicUrl}/reset-password?token=${token}\n\nIf you didn’t request this, you can ignore this email — your password is unchanged.`,
+    // Third shape: {email, recoveryCode, password} — reset with a saved one-time code.
+    if (body && typeof body === 'object' && 'recoveryCode' in body) {
+      const rec = parseOrThrow(resetViaRecoverySchema, body);
+      const user = await queryOne<DbUser>(`SELECT * FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL`, [rec.email]);
+      const redeemed = user ? await redeemRecoveryCode(user.id, rec.recoveryCode) : null;
+      if (!user || !redeemed) {
+        // one generic failure — reveals nothing about which half was wrong
+        throw badRequest('That email and recovery code combination didn’t match.');
+      }
+      const passwordHash = await hashPassword(rec.password);
+      await withTransaction(async (tx) => {
+        await tx.query(`UPDATE users SET password_hash = $2, failed_login_attempts = 0, locked_until = NULL WHERE id = $1`, [user.id, passwordHash]);
+        await tx.query(`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`, [user.id]);
       });
-      await audit({ actorId: user.id, action: 'auth.password_reset_requested', resource: 'user', resourceId: user.id, ip: req.ip });
+      await audit({ actorId: user.id, action: 'auth.password_reset_via_recovery_code', resource: 'user', resourceId: user.id, metadata: { remaining: redeemed.remaining }, ip: req.ip });
+      return { ok: true, message: 'Password updated. Sign in with your new password.' };
     }
-    // Identical response whether or not the account exists (no enumeration).
-    return { ok: true, message: 'If that email has an account, a reset link is on its way.' };
+
+    const { email } = parseOrThrow(resetRequestSchema, body);
+    const disclosure = await resetDisclosureMode();
+
+    return withMinDuration(350, async () => {
+      const user = await queryOne<DbUser>(`SELECT * FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL`, [email]);
+      if (user) {
+        const token = randomToken(32);
+        await query(
+          `INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '1 hour')`,
+          [user.id, sha256Hex(token)],
+        );
+        await sendMail({
+          to: user.email,
+          subject: 'Reset your Lens of Light password',
+          text: `Hi ${user.name},\n\nReset your password within 1 hour:\n${config.publicUrl}/reset-password?token=${token}\n\nIf you didn’t request this, you can ignore this email — your password is unchanged.`,
+        });
+        await audit({ actorId: user.id, action: 'auth.password_reset_requested', resource: 'user', resourceId: user.id, ip: req.ip });
+        if (disclosure === 'on-screen') {
+          return { ok: true, registered: true, message: 'That address has an account — a reset link is on its way to it.' };
+        }
+      } else {
+        // Unknown address: burn equivalent work, then (email mode) tell the
+        // MAILBOX rather than the requester — solves "which address did I
+        // register?" without exposing account existence on screen.
+        sha256Hex(randomToken(32));
+        const emailHash = sha256Hex(email.toLowerCase());
+        const throttled = await queryOne<{ email_hash: string }>(
+          `SELECT email_hash FROM reset_email_notices WHERE email_hash = $1 AND last_sent_at > now() - interval '24 hours'`,
+          [emailHash],
+        );
+        if (!throttled) {
+          await query(
+            `INSERT INTO reset_email_notices (email_hash, last_sent_at) VALUES ($1, now())
+             ON CONFLICT (email_hash) DO UPDATE SET last_sent_at = now()`,
+            [emailHash],
+          );
+          await sendMail({
+            to: email,
+            subject: 'No Lens of Light account under this address',
+            text: `Someone (probably you) tried to reset a Lens of Light password for this email address, but no account exists under it.\n\nIf you have an account, it was created with a different address — try your other inboxes; the one holding the reset link is your account.\n\nIf you’re new, you can create an account at ${config.publicUrl}/signup.\n\nIf this wasn’t you, no action is needed — nothing about this address is stored.`,
+          });
+        }
+        await audit({ actorId: null, action: 'auth.password_reset_unknown_email', resource: 'user', metadata: { emailHash }, ip: req.ip });
+        if (disclosure === 'on-screen') {
+          return { ok: true, registered: false, message: 'No account exists under that address. Try another email, or create an account.' };
+        }
+      }
+      // Neutral, byte-identical in email mode regardless of account existence.
+      return { ok: true, message: 'Check that inbox: registered addresses get a reset link, unregistered ones get a “no account here” notice.' };
+    });
+  });
+
+  /* ------------------------- recovery codes ------------------------- */
+
+  app.get('/auth/recovery-codes', async (req) => {
+    requireAuth(req);
+    return remainingRecoveryCodes(req.user!.id);
+  });
+
+  app.post('/auth/recovery-codes', async (req) => {
+    requireAuth(req);
+    const body = parseOrThrow(regenerateRecoverySchema, req.body);
+    const user = await queryOne<DbUser>(`SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL`, [req.user!.id]);
+    if (!user || !(await verifyPassword(body.currentPassword, user.password_hash))) {
+      throw unauthorized('Current password didn’t match.');
+    }
+    const codes = await generateRecoveryCodes(user.id);
+    await audit({ actorId: user.id, action: 'auth.recovery_codes_regenerated', resource: 'user', resourceId: user.id, ip: req.ip });
+    return { recoveryCodes: codes, message: 'Previous codes are now invalid. Save these — they won’t be shown again.' };
   });
 
   app.get('/auth/csrf', async (req, reply) => {

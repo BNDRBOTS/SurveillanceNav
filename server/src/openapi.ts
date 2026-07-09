@@ -65,6 +65,10 @@ export const openapiDocument = {
     '/auth/refresh': { post: op('Rotate refresh token (httpOnly cookie + CSRF header)', { auth: false, tag: 'auth' }) },
     '/auth/logout': { post: op('Revoke session', { auth: false, tag: 'auth' }) },
     '/auth/csrf': { get: op('Bootstrap CSRF cookie', { auth: false, tag: 'auth' }) },
+    '/auth/recovery-codes': {
+      get: op('Remaining one-time recovery codes', { tag: 'auth' }),
+      post: op('Regenerate recovery codes (requires current password; shown once)', { body: true, tag: 'auth' }),
+    },
     '/auth/mfa/enable': { post: op('Begin TOTP enrollment (returns otpauth URL)', { tag: 'auth' }) },
     '/auth/mfa/verify': { post: op('Verify TOTP code and activate MFA', { body: true, tag: 'auth' }) },
     '/auth/reset-password': { post: op('Request reset ({email}) or complete reset ({token,password})', { auth: false, body: true, tag: 'auth' }) },

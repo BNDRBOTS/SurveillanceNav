@@ -14,6 +14,8 @@ export function LoginPage(): JSX.Element {
   const [password, setPassword] = useState('');
   const [totp, setTotp] = useState('');
   const [needsTotp, setNeedsTotp] = useState(false);
+  const [useRecovery, setUseRecovery] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +24,12 @@ export function LoginPage(): JSX.Element {
     setBusy(true);
     setError(null);
     try {
-      const session = await login(email.trim(), password, needsTotp ? totp : undefined);
+      const session = await login(
+        email.trim(),
+        password,
+        needsTotp && !useRecovery ? totp : undefined,
+        needsTotp && useRecovery ? recoveryCode : undefined,
+      );
       if (session.mfaSetupRequired) {
         navigate('/mfa-setup');
       } else {
@@ -59,17 +66,37 @@ export function LoginPage(): JSX.Element {
         ) : null}
         <TextInput label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         <PasswordInput label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
-        {needsTotp ? (
-          <TextInput
-            label="Authenticator code"
-            value={totp}
-            onChange={(e) => setTotp(e.target.value)}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder="6-digit code"
-            hint="Codes rotate every 30 seconds"
-            autoFocus
-          />
+        {needsTotp && !useRecovery ? (
+          <>
+            <TextInput
+              label="Authenticator code"
+              value={totp}
+              onChange={(e) => setTotp(e.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="6-digit code"
+              hint="Codes rotate every 30 seconds"
+              autoFocus
+            />
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setUseRecovery(true)}>
+              Lost your authenticator? Use a recovery code
+            </button>
+          </>
+        ) : null}
+        {needsTotp && useRecovery ? (
+          <>
+            <TextInput
+              label="Recovery code"
+              value={recoveryCode}
+              onChange={(e) => setRecoveryCode(e.target.value)}
+              placeholder="XXXX-XXXX-XXXX"
+              hint="One of the codes you saved at signup — each works once"
+              autoFocus
+            />
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setUseRecovery(false)}>
+              Back to authenticator code
+            </button>
+          </>
         ) : null}
         <button className="btn btn-primary" disabled={busy}>
           {busy ? 'Signing in…' : needsTotp ? 'Verify & sign in' : 'Sign in'}
@@ -101,6 +128,8 @@ export function SignupPage(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [nextRoute, setNextRoute] = useState('/onboarding');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +143,12 @@ export function SignupPage(): JSX.Element {
     try {
       const session = await signup({ email: email.trim(), name: name.trim(), password, researchContact: research });
       toast('Account created — welcome aboard.', 'success');
-      navigate(session.mfaSetupRequired ? '/mfa-setup' : '/onboarding');
+      setNextRoute(session.mfaSetupRequired ? '/mfa-setup' : '/onboarding');
+      if (session.recoveryCodes?.length) {
+        setCodes(session.recoveryCodes); // show once, then continue
+      } else {
+        navigate(session.mfaSetupRequired ? '/mfa-setup' : '/onboarding');
+      }
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr.details && Array.isArray(apiErr.details)) {
@@ -129,6 +163,14 @@ export function SignupPage(): JSX.Element {
       setBusy(false);
     }
   };
+
+  if (codes) {
+    return (
+      <div className="auth-layout">
+        <RecoveryCodesCard codes={codes} onDone={() => navigate(nextRoute)} />
+      </div>
+    );
+  }
 
   return (
     <div className="auth-layout">
@@ -165,6 +207,57 @@ export function SignupPage(): JSX.Element {
   );
 }
 
+/** One-time display of freshly generated recovery codes: save, then continue. */
+export function RecoveryCodesCard({ codes, onDone }: { codes: string[]; onDone: () => void }): JSX.Element {
+  const toast = useStore((s) => s.toast);
+  const [saved, setSaved] = useState(false);
+  const blob = () => codes.join('\n');
+  return (
+    <div className="card auth-card col" role="region" aria-label="Recovery codes">
+      <h1 style={{ fontSize: 'var(--font-size-lg)' }}>Save your recovery codes</h1>
+      <p className="text-sm text-secondary">
+        These are your way back in if you ever lose access to your email or authenticator. Each code works once.
+        They are shown <strong>only now</strong> — we store them hashed and cannot show them again.
+      </p>
+      <div className="mono card" style={{ padding: 'var(--space-sm)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, userSelect: 'all' }}>
+        {codes.map((c) => (
+          <span key={c}>{c}</span>
+        ))}
+      </div>
+      <div className="row-wrap">
+        <button
+          type="button"
+          className="btn"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(blob());
+              toast('Codes copied to clipboard.', 'success');
+            } catch {
+              toast('Copy failed — select the codes and copy manually.', 'warning');
+            }
+          }}
+        >
+          Copy all
+        </button>
+        <a
+          className="btn"
+          href={`data:text/plain;charset=utf-8,${encodeURIComponent(`Lens of Light recovery codes\nEach code works once. Keep offline.\n\n${blob()}\n`)}`}
+          download="lens-of-light-recovery-codes.txt"
+        >
+          Download .txt
+        </a>
+      </div>
+      <label className="checkbox-row">
+        <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} />
+        <span className="text-sm">I saved these somewhere safe (offline is best)</span>
+      </label>
+      <button type="button" className="btn btn-primary" disabled={!saved} onClick={onDone}>
+        Continue
+      </button>
+    </div>
+  );
+}
+
 export function ResetPasswordPage(): JSX.Element {
   const [params] = useSearchParams();
   const token = params.get('token');
@@ -173,7 +266,9 @@ export function ResetPasswordPage(): JSX.Element {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+  const [mode, setMode] = useState<'link' | 'code'>('link');
+  const [recoveryCode, setRecoveryCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const requestReset = async (e: React.FormEvent) => {
@@ -181,8 +276,23 @@ export function ResetPasswordPage(): JSX.Element {
     setBusy(true);
     setError(null);
     try {
-      await post('/auth/reset-password', { email: email.trim() });
-      setSent(true);
+      const res = await post<{ message: string }>('/auth/reset-password', { email: email.trim() });
+      setSent(res.message);
+    } catch (err) {
+      setError((err as ApiError).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetViaCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await post('/auth/reset-password', { email: email.trim(), recoveryCode: recoveryCode.trim(), password });
+      toast('Password updated — sign in with your new password.', 'success');
+      navigate('/login');
     } catch (err) {
       setError((err as ApiError).message);
     } finally {
@@ -207,7 +317,11 @@ export function ResetPasswordPage(): JSX.Element {
 
   return (
     <div className="auth-layout">
-      <form className="card auth-card col" onSubmit={token ? completeReset : requestReset} aria-label="Reset password">
+      <form
+        className="card auth-card col"
+        onSubmit={token ? completeReset : mode === 'code' ? resetViaCode : requestReset}
+        aria-label="Reset password"
+      >
         <h1 style={{ fontSize: 'var(--font-size-lg)' }}>{token ? 'Choose a new password' : 'Reset your password'}</h1>
         {error ? (
           <p className="field-error" role="alert">
@@ -222,14 +336,39 @@ export function ResetPasswordPage(): JSX.Element {
             </button>
           </>
         ) : sent ? (
-          <p className="text-sm text-secondary" role="status">
-            If that email has an account, a reset link is on its way. It expires in 1 hour.
-          </p>
+          <>
+            <p className="text-sm text-secondary" role="status">
+              {sent} Reset links expire in 1 hour.
+            </p>
+            <p className="text-xs text-secondary">
+              Not sure which of your addresses you registered with? Try each one — every inbox gets a definitive
+              answer either way.
+            </p>
+            <button type="button" className="btn btn-ghost" onClick={() => setSent(null)}>
+              Try another address
+            </button>
+          </>
+        ) : mode === 'code' ? (
+          <>
+            <p className="text-sm text-secondary">No email access needed — use one of the recovery codes you saved.</p>
+            <TextInput label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <TextInput label="Recovery code" value={recoveryCode} onChange={(e) => setRecoveryCode(e.target.value)} placeholder="XXXX-XXXX-XXXX" required />
+            <PasswordInput label="New password" value={password} onChange={setPassword} autoComplete="new-password" withMeter />
+            <button className="btn btn-primary" disabled={busy}>
+              {busy ? 'Updating…' : 'Reset with code'}
+            </button>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setMode('link')}>
+              Back to email link
+            </button>
+          </>
         ) : (
           <>
             <TextInput label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
             <button className="btn btn-primary" disabled={busy}>
               {busy ? 'Sending…' : 'Send reset link'}
+            </button>
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setMode('code')}>
+              I have a recovery code
             </button>
           </>
         )}

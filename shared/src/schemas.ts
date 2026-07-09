@@ -99,12 +99,17 @@ export const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Required').max(128),
   totp: safeString(12).optional(),
+  /** One-time recovery code — substitutes for TOTP when the authenticator is lost. */
+  recoveryCode: safeString(20).optional(),
 });
 
 export const mfaVerifySchema = z.object({ code: nonEmptyString(12) });
 
 export const resetRequestSchema = z.object({ email });
 export const resetCompleteSchema = z.object({ token: nonEmptyString(200), password });
+/** Password reset using a saved one-time recovery code instead of an email link. */
+export const resetViaRecoverySchema = z.object({ email, recoveryCode: nonEmptyString(20), password });
+export const regenerateRecoverySchema = z.object({ currentPassword: z.string().min(1, 'Required').max(128) });
 
 /* ------------------------------------------------------------------ *
  * Users

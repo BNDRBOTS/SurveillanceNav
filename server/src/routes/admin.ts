@@ -470,7 +470,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
   app.put('/admin/settings', async (req) => {
     const body = parseOrThrow(settingsUpdateSchema, req.body);
-    const ALLOWED_KEYS = ['rate_limits', 'feature_flags', 'cache_ttls', 'retention', 'foia.deadlineOverrides', 'tile_provider'];
+    const ALLOWED_KEYS = ['rate_limits', 'feature_flags', 'cache_ttls', 'retention', 'foia.deadlineOverrides', 'tile_provider', 'auth.resetDisclosure'];
     if (!ALLOWED_KEYS.includes(body.key)) {
       throw badRequest(`Unknown settings key. Allowed: ${ALLOWED_KEYS.join(', ')}`);
     }

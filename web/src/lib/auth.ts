@@ -44,8 +44,18 @@ export async function bootstrapSession(): Promise<void> {
   useStore.getState().setAuthReady();
 }
 
-export async function login(email: string, password: string, totp?: string): Promise<AuthTokens> {
-  const tokens = await post<AuthTokens>('/auth/login', { email, password, ...(totp ? { totp } : {}) });
+export async function login(
+  email: string,
+  password: string,
+  totp?: string,
+  recoveryCode?: string,
+): Promise<AuthTokens> {
+  const tokens = await post<AuthTokens>('/auth/login', {
+    email,
+    password,
+    ...(totp ? { totp } : {}),
+    ...(recoveryCode ? { recoveryCode } : {}),
+  });
   applySession(tokens);
   haptics.light();
   return tokens;
@@ -56,8 +66,8 @@ export async function signup(input: {
   name: string;
   password: string;
   researchContact: boolean;
-}): Promise<AuthTokens> {
-  const tokens = await post<AuthTokens>('/auth/signup', {
+}): Promise<AuthTokens & { recoveryCodes?: string[] }> {
+  const tokens = await post<AuthTokens & { recoveryCodes?: string[] }>('/auth/signup', {
     email: input.email,
     name: input.name,
     password: input.password,

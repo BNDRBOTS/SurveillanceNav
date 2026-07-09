@@ -100,6 +100,9 @@ export const config = {
   /** Destination for operator notifications (error reports). Empty = store-only. */
   adminEmail: process.env.ADMIN_EMAIL ?? '',
 
+  /** 'email' = enumeration-safe identification via inbox; 'on-screen' = page states it. */
+  resetDisclosureMode: env('RESET_DISCLOSURE_MODE', 'email') as 'email' | 'on-screen',
+
   mail: {
     transport: env('MAIL_TRANSPORT', isProd ? 'smtp' : 'outbox') as 'smtp' | 'outbox',
     from: env('MAIL_FROM', 'Lens of Light <no-reply@stn.local>'),

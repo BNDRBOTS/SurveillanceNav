@@ -22,6 +22,10 @@ check "service worker served"          "$J $BASE/sw.js | grep -q 'stn-v1'"
 check "openapi served"                 "$J $BASE/api/v1/openapi.json | grep -q '\"openapi\"'"
 check "security headers present"       "curl -fsSI $BASE/api/v1/health/live | grep -qi 'content-security-policy'"
 check "API 404 envelope"               "curl -s $BASE/api/v1/nope | grep -q '\"code\":\"not_found\"'"
+check "landing served at /"            "$J $BASE/ | grep -qi '<!doctype html>'"
+check "public stats endpoint"          "$J $BASE/api/v1/stats | grep -q 'documentedAssets'"
+check "brand logo route exists"        "curl -s -o /dev/null -w '%{http_code}' $BASE/brand/bndr.png | grep -qE '^(200|404)$'"
+check "og image served"                "curl -fsSI $BASE/og.png | grep -qi 'image/png'"
 
 # --- auth ----------------------------------------------------------------
 SIGNUP=$(curl -fsS -X POST "$BASE/api/v1/auth/signup" -H 'content-type: application/json' \

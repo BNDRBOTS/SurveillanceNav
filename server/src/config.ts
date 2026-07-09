@@ -100,6 +100,14 @@ export const config = {
   /** Destination for operator notifications (error reports). Empty = store-only. */
   adminEmail: process.env.ADMIN_EMAIL ?? '',
 
+  /** Upstream for the BNDR brand mark, fetched once server-side and cached to
+      disk so the page never loads cross-origin assets (strict CSP stays). A
+      file shipped at web/public/brand/bndr.png takes precedence entirely. */
+  brandLogoUrl: env(
+    'BRAND_LOGO_URL',
+    'https://r2-uploader-production.up.railway.app/files/6a9dd45e-e7a0-4396-a084-5f11b737e92e.png',
+  ),
+
   /** 'email' = enumeration-safe identification via inbox; 'on-screen' = page states it. */
   resetDisclosureMode: env('RESET_DISCLOSURE_MODE', 'email') as 'email' | 'on-screen',
 

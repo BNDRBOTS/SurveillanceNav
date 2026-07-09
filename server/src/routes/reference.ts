@@ -151,6 +151,27 @@ export function registerReferenceRoutes(app: FastifyInstance): void {
     };
   });
 
+  /* ---------------------------------------------------------- public stats */
+
+  /* Aggregate counts only — no user data, no coordinates, nothing precise
+     enough to be sensitive. Powers the live numbers on the marketing page. */
+  app.get('/stats', async () =>
+    cachedJson('stats:public', 300, async () => {
+      const one = async (sql: string): Promise<number> => {
+        const { rows } = await query<{ n: number }>(sql);
+        return rows[0]?.n ?? 0;
+      };
+      const [documentedAssets, foiaRequests, procurementRecords, policiesTracked, statuteJurisdictions] =
+        await Promise.all([
+          one(`SELECT count(*)::int AS n FROM surveillance_assets WHERE deleted_at IS NULL`),
+          one(`SELECT count(*)::int AS n FROM foia_requests`),
+          one(`SELECT count(*)::int AS n FROM procurements`),
+          one(`SELECT count(*)::int AS n FROM policies`),
+          one(`SELECT count(*)::int AS n FROM statutes WHERE review_status = 'approved' AND superseded_at IS NULL`),
+        ]);
+      return { documentedAssets, foiaRequests, procurementRecords, policiesTracked, statuteJurisdictions };
+    }));
+
   /* ---------------------------------------------------------- layer presets */
 
   app.get('/presets', async (req) => {

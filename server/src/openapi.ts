@@ -168,7 +168,8 @@ export const openapiDocument = {
       post: op('Register source (editor)', { body: true, tag: 'reference' }),
     },
     '/sources/{id}': { patch: op('Update source / set verification (admin)', { body: true, tag: 'reference' }) },
-    '/reference/foia-statutes': { get: op('Public-records statutes for all 50 states + DC + federal', { auth: false, tag: 'reference' }) },
+    '/reference/foia-statutes': { get: op('Public-records statutes: federal, all 50 states + DC, and the territories', { auth: false, tag: 'reference' }) },
+    '/stats': { get: op('Public aggregate counts (assets, FOIA, procurement, policies, statutes)', { auth: false, tag: 'reference' }) },
     '/presets': {
       get: op('My + workspace layer presets', { tag: 'reference' }),
       post: op('Save layer preset (returns share token)', { body: true, tag: 'reference' }),

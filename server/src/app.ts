@@ -109,6 +109,31 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   }
 
+  // BNDR brand mark, always same-origin (the strict img-src CSP never loosens).
+  // Preference order: a file shipped in the web build (web/public/brand/bndr.png,
+  // which fastify-static already serves) → a disk-cached copy fetched once from
+  // the configured upstream → 404, which the client renders as styled text.
+  if (!fs.existsSync(path.join(dist, 'brand', 'bndr.png'))) {
+    const cachedLogo = path.join(config.storageLocalDir, 'brand-bndr.png');
+    app.get('/brand/bndr.png', async (_req, reply) => {
+      try {
+        if (!fs.existsSync(cachedLogo)) {
+          const res = await fetch(config.brandLogoUrl, { signal: AbortSignal.timeout(10_000) });
+          const type = res.headers.get('content-type') ?? '';
+          if (!res.ok || !type.startsWith('image/')) throw new Error(`upstream ${res.status} ${type}`);
+          const buf = Buffer.from(await res.arrayBuffer());
+          if (buf.byteLength === 0 || buf.byteLength > 2 * 1024 * 1024) throw new Error('unexpected logo size');
+          fs.mkdirSync(path.dirname(cachedLogo), { recursive: true });
+          fs.writeFileSync(cachedLogo, buf);
+        }
+        reply.header('Cache-Control', 'public, max-age=86400');
+        return await reply.type('image/png').send(fs.readFileSync(cachedLogo));
+      } catch {
+        return reply.status(404).send();
+      }
+    });
+  }
+
   // Single not-found handler: SPA fallback for app routes, JSON envelope otherwise.
   app.setNotFoundHandler((req, reply) => {
     // Decide on the pathname alone — query strings routinely contain dots

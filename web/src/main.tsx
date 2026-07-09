@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './styles/tokens.css';
 import './styles/base.css';
@@ -14,6 +14,7 @@ import {
   LazyAdminPage,
   LazySettingsPage,
   LazyHelpPage,
+  LazyLandingPage,
 } from './App';
 import { LoginPage, SignupPage, ResetPasswordPage, MfaSetupPage, InvitePage } from '@/pages/AuthPages';
 import { FoiaListPage, FoiaNewPage, FoiaDetailPage } from '@/pages/FoiaPages';
@@ -37,10 +38,19 @@ const queryClient = new QueryClient({
 });
 
 const router = createBrowserRouter([
+  // The marketing front door lives outside the app shell: no top bar, no side
+  // nav. Signed-in visitors are redirected to /map by the page itself.
+  {
+    path: '/',
+    element: (
+      <React.Suspense fallback={null}>
+        <LazyLandingPage />
+      </React.Suspense>
+    ),
+  },
   {
     element: <AppShell />,
     children: [
-      { path: '/', element: <Navigate to="/map" replace /> },
       { path: '/map', element: <LazyMapPage /> },
       { path: '/foia', element: <FoiaListPage /> },
       { path: '/foia/new', element: <FoiaNewPage /> },

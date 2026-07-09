@@ -72,6 +72,7 @@ export default function MapPage(): JSX.Element {
   const [navMode, setNavMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
   const [avoidEnabled, setAvoidEnabled] = useState(true);
   const [navPick, setNavPick] = useState<'origin' | 'destination' | null>(null);
+  const [basemapStatus, setBasemapStatus] = useState<'ok' | 'fallback'>('ok');
 
   const navOriginRef = { current: navOrigin };
   navOriginRef.current = navOrigin;
@@ -192,6 +193,7 @@ export default function MapPage(): JSX.Element {
         camera={camera}
         onViewChange={onViewChange}
         onSelect={(id) => setSelectedAsset(id)}
+        onBasemapStatus={setBasemapStatus}
         onMapClick={(lngLat) => {
           if (navPick) {
             const endpoint = { label: `${lngLat.lat.toFixed(5)}, ${lngLat.lng.toFixed(5)}`, ...lngLat };
@@ -275,6 +277,11 @@ export default function MapPage(): JSX.Element {
             </option>
           ))}
         </select>
+        {basemapStatus === 'fallback' ? (
+          <span className="pill" data-tone="muted" title="Base tiles are unreachable right now — showing the built-in offline basemap. Data stays live.">
+            offline basemap
+          </span>
+        ) : null}
         {(stale || dataStale) && (
           <span className="pill" data-tone="warning" title="Data served from cache — may be out of date">
             cached data

@@ -8,6 +8,8 @@ import { buildStyle, type BaseStyle } from './mapStyle';
 import type { AssetFeatureCollection } from './useAssets';
 import { useStore } from '@/lib/store';
 import { haptics } from '@/lib/haptics';
+import { submitErrorReport } from '@/lib/errorReport';
+import { initialRasterHealth, rasterHealthNext, FALLBACK_GRACE_MS, type RasterHealth } from './rasterHealth';
 import { announce } from '@/lib/announcer';
 import { Icon } from '@/components/Icon';
 
@@ -31,6 +33,9 @@ interface MapCanvasProps {
   onViewChange: (view: { lng: number; lat: number; zoom: number; bbox: [number, number, number, number] }) => void;
   onSelect: (assetId: string) => void;
   onMapClick?: (lngLat: { lng: number; lat: number }) => void;
+  /** Basemap health for chrome: 'ok' normally, 'fallback' when raster tiles
+      are unreachable and the offline vector basemap is showing instead. */
+  onBasemapStatus?: (status: 'ok' | 'fallback') => void;
   pickMode?: boolean;
   /** Navigation overlay: route lines, endpoints, exposed cameras. */
   route?: {
@@ -102,6 +107,7 @@ export function MapCanvas({
   onViewChange,
   onSelect,
   onMapClick,
+  onBasemapStatus,
   pickMode,
   route,
 }: MapCanvasProps): JSX.Element {
@@ -116,7 +122,13 @@ export function MapCanvas({
   const [locate, setLocate] = useState<LocateState>({ status: 'idle' });
   const userMarkerRef = useRef<Marker | null>(null);
   const toast = useStore((s) => s.toast);
-  const rasterErrorToastedRef = useRef(false);
+  const rasterHealthRef = useRef<RasterHealth>(initialRasterHealth());
+  const rasterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorChainRef = useRef<string[]>([]);
+  const styleFailureToastedRef = useRef(false);
+  const mapRasterDispatchRef = useRef<((e: 'error' | 'tileLoaded' | 'timerFired' | 'reset') => void) | null>(null);
+  const onBasemapStatusRef = useRef(onBasemapStatus);
+  onBasemapStatusRef.current = onBasemapStatus;
   const styleRef = useRef<BaseStyle>(baseStyle);
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
@@ -189,16 +201,77 @@ export function MapCanvas({
     };
     map.on('moveend', () => emitView(map));
 
-    map.on('error', (e) => {
-      const sourceId = (e as { sourceId?: string }).sourceId;
-      if (sourceId === 'raster' && !rasterErrorToastedRef.current) {
-        rasterErrorToastedRef.current = true;
-        toast('Base tiles are unavailable — showing the offline vector basemap instead.', 'warning', 6000);
+    /* -------- basemap health: sustained-failure fallback, no false alarms -------- */
+    const applyRasterAction = (action: string) => {
+      if (action === 'armTimer') {
+        rasterTimerRef.current = setTimeout(() => dispatchRaster('timerFired'), FALLBACK_GRACE_MS);
+      } else if (action === 'disarmTimer') {
+        if (rasterTimerRef.current) clearTimeout(rasterTimerRef.current);
+        rasterTimerRef.current = null;
+      } else if (action === 'fallback') {
+        // silent: reveal the bundled vector basemap under the (empty) raster
         if (map.getLayer('states-fill')) map.setPaintProperty('states-fill', 'fill-opacity', 1);
+        if (map.getLayer('states-line')) map.setPaintProperty('states-line', 'line-opacity', 0.9);
+        onBasemapStatusRef.current?.('fallback');
+      } else if (action === 'recover') {
+        if (map.getLayer('states-fill')) map.setPaintProperty('states-fill', 'fill-opacity', 0);
+        if (map.getLayer('states-line')) {
+          map.setPaintProperty('states-line', 'line-opacity', styleRef.current === 'satellite' ? 0 : 0.9);
+        }
+        onBasemapStatusRef.current?.('ok');
+      }
+    };
+    const dispatchRaster = (event: 'error' | 'tileLoaded' | 'timerFired' | 'reset') => {
+      const { state, action } = rasterHealthNext(rasterHealthRef.current, event);
+      rasterHealthRef.current = state;
+      applyRasterAction(action);
+    };
+    mapRasterDispatchRef.current = dispatchRaster;
+
+    map.on('sourcedata', (e) => {
+      const ev = e as { sourceId?: string; dataType?: string; tile?: unknown };
+      if (ev.sourceId === 'raster' && ev.dataType === 'source' && ev.tile) dispatchRaster('tileLoaded');
+    });
+
+    map.on('error', (e) => {
+      const ev = e as { sourceId?: string; error?: { message?: string } };
+      const message = ev.error?.message ?? 'Unknown map error';
+      errorChainRef.current = [...errorChainRef.current.slice(-9), message];
+
+      if (ev.sourceId === 'raster') {
+        dispatchRaster('error');
+        return;
+      }
+      // The offline vector basemap itself failing IS toast-worthy: style parse,
+      // glyph/sprite fetches, or the bundled states source erroring means the
+      // fallback beneath the fallback is gone.
+      const vectorFailure = ev.sourceId === 'states' || /style|glyph|font|sprite/i.test(message);
+      if (vectorFailure && !styleFailureToastedRef.current) {
+        styleFailureToastedRef.current = true;
+        const center = map.getCenter();
+        const detail = {
+          styleId: styleRef.current,
+          errorChain: errorChainRef.current,
+          mapState: { lng: center.lng, lat: center.lat, zoom: map.getZoom() },
+        };
+        toast(
+          'The map failed to render. This should never happen — a one-tap report helps us fix it fast.',
+          'error',
+          0,
+          {
+            label: 'Send error report',
+            run: () => {
+              void submitErrorReport({ kind: 'map_style', message: 'Vector basemap failure', detail })
+                .then((confirmation) => toast(confirmation, 'success', 6000))
+                .catch(() => toast('Could not submit the report — you appear to be offline.', 'warning', 6000));
+            },
+          },
+        );
       }
     });
 
     return () => {
+      if (rasterTimerRef.current) clearTimeout(rasterTimerRef.current);
       map.remove();
       mapRef.current = null;
     };
@@ -210,7 +283,9 @@ export function MapCanvas({
     const map = mapRef.current;
     if (!map || !ready || styleRef.current === baseStyle) return;
     styleRef.current = baseStyle;
-    rasterErrorToastedRef.current = false;
+    mapRasterDispatchRef.current?.('reset');
+    styleFailureToastedRef.current = false;
+    onBasemapStatusRef.current?.('ok');
     const center = map.getCenter();
     const zoom = map.getZoom();
     map.setStyle(buildStyle(baseStyle, statesData as never));

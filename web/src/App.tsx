@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/TopBar';
 import { SideNav, BottomNav } from '@/components/SideNav';
+import { EntryGate } from '@/components/EntryGate';
 import { Toasts, ErrorBoundary, Skeleton } from '@/components/Feedback';
 import { Icon } from '@/components/Icon';
 import { Announcer } from '@/lib/announcer';
@@ -56,6 +57,7 @@ export function AppShell(): JSX.Element {
         </main>
       </div>
       <BottomNav />
+      <EntryGate />
       <Toasts />
       <Announcer />
     </ErrorBoundary>

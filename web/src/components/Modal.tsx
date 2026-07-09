@@ -10,12 +10,14 @@ interface ModalProps {
   large?: boolean;
   /** Allow closing via backdrop click (default true). */
   dismissable?: boolean;
+  /** Blocking dialogs (legal gates) render no close button at all. */
+  hideClose?: boolean;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 /** Accessible modal: focus trap, ESC close, configurable backdrop close, focus restore. */
-export function Modal({ title, onClose, children, footer, large, dismissable = true }: ModalProps): JSX.Element {
+export function Modal({ title, onClose, children, footer, large, dismissable = true, hideClose = false }: ModalProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
 
@@ -72,9 +74,11 @@ export function Modal({ title, onClose, children, footer, large, dismissable = t
       >
         <div className="modal-header">
           <h2>{title}</h2>
-          <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close dialog">
-            <Icon name="x" size={18} />
-          </button>
+          {hideClose ? null : (
+            <button type="button" className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close dialog">
+              <Icon name="x" size={18} />
+            </button>
+          )}
         </div>
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-footer">{footer}</div> : null}

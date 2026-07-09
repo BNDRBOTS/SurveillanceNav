@@ -6,6 +6,7 @@ import {
   uuid as uuidSchema,
   statuteForState,
   computeFoiaDueDate,
+  DISCLAIMER_VERSIONS,
   LIMITS,
   ALLOWED_UPLOAD_MIME,
 } from '@stn/shared';
@@ -97,6 +98,22 @@ export function registerFoiaRoutes(app: FastifyInstance): void {
     requireAuth(req);
     const body = parseOrThrow(createFoiaSchema, req.body);
     await workspaceRole(req, body.workspaceId, 'editor');
+
+    // Legal-consequence gate: a public-records request is a real legal act
+    // sent under the user's name. The client shows the acknowledgment; the
+    // server refuses to create requests without it (defense in depth).
+    const ack = await queryOne(
+      `SELECT 1 FROM acknowledgments WHERE user_id = $1 AND key = 'foia-legal' AND version = $2`,
+      [req.user!.id, DISCLAIMER_VERSIONS['foia-legal']],
+    );
+    if (!ack) {
+      return reply.status(400).send({
+        error: {
+          code: 'ack_required',
+          message: 'Acknowledge the public-records legal notice before creating requests.',
+        },
+      });
+    }
 
     const row = await queryOne<{ id: string }>(
       `INSERT INTO foia_requests (workspace_id, jurisdiction_id, created_by, subject, body, due_at)

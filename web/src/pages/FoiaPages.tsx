@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   FOIA_STATUSES,
+  DISCLAIMER_VERSIONS,
   type FoiaDocument,
   type FoiaRequest,
   type FoiaStatute,
@@ -18,7 +19,7 @@ import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/Badges';
 import { EmptyState, ErrorState, Skeleton } from '@/components/Feedback';
 import { TextInput, TextArea, Select, FileDrop } from '@/components/Form';
-import { ConfirmDialog } from '@/components/Modal';
+import { ConfirmDialog, Modal } from '@/components/Modal';
 import { useDebounce } from '@/lib/useDebounce';
 import { useWalkthrough } from '@/lib/tours';
 
@@ -157,7 +158,16 @@ export function FoiaNewPage(): JSX.Element {
   const [statute, setStatute] = useState<FoiaStatute | null>(null);
   const [composing, setComposing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [legalGateOpen, setLegalGateOpen] = useState(false);
   const debouncedJq = useDebounce(jurisdictionQuery, 150);
+  const queryClient = useQueryClient();
+
+  const { data: acks } = useQuery({
+    queryKey: ['acknowledgments'],
+    queryFn: () => get<{ items: Array<{ key: string; version: number }> }>('/users/me/acknowledgments'),
+    staleTime: Infinity,
+  });
+  const legalAcked = !!acks?.items.some((a) => a.key === 'foia-legal' && a.version >= DISCLAIMER_VERSIONS['foia-legal']);
 
   const { data: templates } = useQuery({
     queryKey: ['foia-templates'],
@@ -194,15 +204,7 @@ export function FoiaNewPage(): JSX.Element {
     }
   };
 
-  const saveDraft = async () => {
-    if (!workspaceId) {
-      toast('Create or select a workspace first (top bar).', 'warning');
-      return;
-    }
-    if (!subject.trim() || !body.trim()) {
-      toast('Compose or write the request first.', 'warning');
-      return;
-    }
+  const performSave = async () => {
     setSaving(true);
     try {
       const created = await post<FoiaRequest>('/foia', {
@@ -223,6 +225,24 @@ export function FoiaNewPage(): JSX.Element {
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveDraft = async () => {
+    if (!workspaceId) {
+      toast('Create or select a workspace first (top bar).', 'warning');
+      return;
+    }
+    if (!subject.trim() || !body.trim()) {
+      toast('Compose or write the request first.', 'warning');
+      return;
+    }
+    // Legal-consequence acknowledgment: required once (per disclaimer
+    // version) before any request is created. Server enforces it too.
+    if (!legalAcked) {
+      setLegalGateOpen(true);
+      return;
+    }
+    await performSave();
   };
 
   return (
@@ -312,7 +332,69 @@ export function FoiaNewPage(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {legalGateOpen ? (
+        <FoiaLegalGate
+          onClose={() => setLegalGateOpen(false)}
+          onAccepted={async () => {
+            setLegalGateOpen(false);
+            void queryClient.invalidateQueries({ queryKey: ['acknowledgments'] });
+            await performSave();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * Legal-consequence acknowledgment before the first request is created —
+ * a public-records request is a real legal instrument sent under the
+ * requester's name. Server-enforced (POST /foia rejects without it).
+ */
+function FoiaLegalGate({ onClose, onAccepted }: { onClose: () => void; onAccepted: () => Promise<void> }): JSX.Element {
+  const toast = useStore((s) => s.toast);
+  const [busy, setBusy] = useState(false);
+  const accept = async () => {
+    setBusy(true);
+    try {
+      await post('/users/me/acknowledgments', { key: 'foia-legal', version: DISCLAIMER_VERSIONS['foia-legal'] });
+      await onAccepted();
+    } catch (err) {
+      toast((err as ApiError).message, 'error');
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal title="Before you file public-records requests" onClose={onClose} dismissable={false}>
+      <div className="col" style={{ gap: 'var(--space-sm)' }}>
+        <p className="text-sm">
+          A public-records request is a <strong>real legal instrument</strong> submitted to a government agency
+          under your name. Before your first one:
+        </p>
+        <ul className="text-sm" style={{ paddingLeft: 'var(--space-lg)', display: 'grid', gap: 6 }}>
+          <li>Your request — and often your identity as the requester — may itself become a public record.</li>
+          <li>Agencies may charge search, review, and duplication fees; you are responsible for fees you agree to.</li>
+          <li>Knowingly false statements to a government agency can carry civil or criminal penalties.</li>
+          <li>
+            This platform drafts letters and computes statutory deadlines from tracked law, but it is not a law
+            firm, this is not legal advice, and statute data can lag the law. Verify before relying on it.
+          </li>
+        </ul>
+        <p className="text-xs text-secondary">
+          Acknowledging records the current notice version on your account. You won’t be asked again unless the
+          notice materially changes.
+        </p>
+      </div>
+      <div className="row" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-md)' }}>
+        <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
+          Not now
+        </button>
+        <button type="button" className="btn btn-primary" onClick={() => void accept()} disabled={busy}>
+          {busy ? 'Recording…' : 'I understand — continue'}
+        </button>
+      </div>
+    </Modal>
   );
 }
 

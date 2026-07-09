@@ -24,7 +24,8 @@ const FAQ: Array<{ q: string; a: JSX.Element | string }> = [
     q: 'Where does the map data come from?',
     a: (
       <>
-        Three places: community members documenting devices from public space, imported open datasets (De-Flock /
+        Three places: community members documenting devices from public space, imported open datasets (Will
+        Freeman's <a href="https://deflock.me" target="_blank" rel="noopener noreferrer">DeFlock</a> /
         OpenStreetMap, clearly labeled and ODbL-licensed), and public records — procurement documents and FOIA
         responses. Every record shows its sources, and the confidence score tells you how well-corroborated it is.
         Tap any score to see exactly why it is what it is.

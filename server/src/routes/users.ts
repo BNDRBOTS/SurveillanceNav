@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { updateMeSchema, type UserPublic } from '@stn/shared';
+import { updateMeSchema, acknowledgmentSchema, DISCLAIMER_VERSIONS, type UserPublic } from '@stn/shared';
 import { parseOrThrow } from '../lib/validation.js';
 import { query, queryOne, withTransaction } from '../db/pool.js';
 import { requireAuth, invalidateUserStatusCache } from '../plugins/auth.js';
@@ -121,6 +121,33 @@ export function registerUserRoutes(app: FastifyInstance): void {
   });
 
   /** Notifications (bell). */
+  /* ------------------------ acknowledgments ------------------------ */
+
+  app.get('/users/me/acknowledgments', async (req) => {
+    requireAuth(req);
+    const { rows } = await query(
+      `SELECT key, version, accepted_at AS "acceptedAt" FROM acknowledgments WHERE user_id = $1 ORDER BY accepted_at`,
+      [req.user!.id],
+    );
+    return { items: rows, current: DISCLAIMER_VERSIONS };
+  });
+
+  app.post('/users/me/acknowledgments', async (req) => {
+    requireAuth(req);
+    const body = parseOrThrow(acknowledgmentSchema, req.body);
+    const current = DISCLAIMER_VERSIONS[body.key];
+    if (body.version !== current) {
+      throw badRequest(`Stale disclaimer version — the current ${body.key} disclaimer is v${current}. Reload and re-read it.`);
+    }
+    await query(
+      `INSERT INTO acknowledgments (user_id, key, version) VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, key, version) DO NOTHING`,
+      [req.user!.id, body.key, body.version],
+    );
+    await audit({ actorId: req.user!.id, action: 'user.acknowledged', resource: 'user', resourceId: req.user!.id, metadata: { key: body.key, version: body.version }, ip: req.ip });
+    return { ok: true };
+  });
+
   app.get('/users/me/notifications', async (req) => {
     requireAuth(req);
     const { rows } = await query(

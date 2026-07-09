@@ -139,4 +139,16 @@ export const TECH_COLORS: Record<TechnologyType, string> = {
   other: '#8A9099',
 };
 
+/**
+ * Disclaimer/acknowledgment versions — the single source both the server
+ * (validation) and the client (gate comparison) import. Bumping a number
+ * forces every user (and every anonymous device) to re-acknowledge that
+ * disclaimer on next entry. Prior acceptances stay on record.
+ */
+export const DISCLAIMER_VERSIONS = {
+  entry: 1,
+  'foia-legal': 1,
+} as const;
+export type DisclaimerKey = keyof typeof DISCLAIMER_VERSIONS;
+
 export const API_PREFIX = '/api/v1';

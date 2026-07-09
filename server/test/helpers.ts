@@ -98,6 +98,20 @@ export async function createUser(role: 'admin' | 'editor' | 'viewer' = 'editor')
     `SELECT workspace_id AS id FROM workspace_members WHERE user_id = $1 LIMIT 1`,
     [body.user.id],
   );
+
+  // Accept the current disclaimers so feature tests exercise their own
+  // concerns; the acknowledgment gates are tested explicitly in
+  // acknowledgments.test.ts.
+  const { DISCLAIMER_VERSIONS } = await import('@stn/shared');
+  for (const key of Object.keys(DISCLAIMER_VERSIONS) as Array<keyof typeof DISCLAIMER_VERSIONS>) {
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/users/me/acknowledgments',
+      headers: { authorization: `Bearer ${body.accessToken}` },
+      payload: { key, version: DISCLAIMER_VERSIONS[key] },
+    });
+  }
+
   return {
     id: body.user.id,
     email,

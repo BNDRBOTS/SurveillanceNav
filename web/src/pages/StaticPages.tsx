@@ -186,6 +186,19 @@ export function SupportPage(): JSX.Element {
         </div>
 
         <div className="card col">
+          <h2>Credit where it's due</h2>
+          <p className="text-sm text-secondary">
+            The camera-mapping approach this platform builds on was proven by <strong>Will Freeman&rsquo;s DeFlock</strong>{' '}
+            (<a href="https://deflock.me" target="_blank" rel="noopener noreferrer">deflock.me</a>). Freeman solved the
+            hard parts first: crowdsourcing ALPR locations onto OpenStreetMap&rsquo;s data rails so the records stay open,
+            verifiable, and license-clean (ODbL) instead of trapped in a private database — then scaling that to tens of
+            thousands of documented readers while withstanding legal pressure from the industry he was documenting. Our
+            imported ALPR layer derives from that work and is labeled accordingly. If this tool is useful to you, his
+            came first.
+          </p>
+        </div>
+
+        <div className="card col">
           <h2>Suggestions &amp; corrections</h2>
           <p className="text-sm text-secondary">
             Spotted something wrong on the map, or have an idea to make this better? This is a best-effort project and

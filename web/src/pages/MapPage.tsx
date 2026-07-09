@@ -21,6 +21,7 @@ import { useStore } from '@/lib/store';
 import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
 import { TextInput, Select } from '@/components/Form';
+import { PlateSelect } from '@/components/PlateSelect';
 import { haptics } from '@/lib/haptics';
 import { NavigatePanel, type NavEndpoint } from '@/map/NavigatePanel';
 import { useNavigation } from '@/map/useNavigation';
@@ -260,11 +261,10 @@ export default function MapPage(): JSX.Element {
             <Icon name="plus" size={16} /> Add asset
           </button>
         ) : null}
-        <select
-          className="input"
-          style={{ minHeight: 34, width: 'auto', fontSize: 'var(--font-size-xs)' }}
-          aria-label="Base map style"
+        <PlateSelect
+          label="Base map style"
           value={baseStyle}
+          displayValue={BASE_STYLES.find((s) => s.id === baseStyle)?.label ?? baseStyle}
           onChange={(e) => {
             setBaseStyle(e.target.value as BaseStyle);
             localStorage.setItem('stn.basestyle', e.target.value);
@@ -276,7 +276,7 @@ export default function MapPage(): JSX.Element {
               {s.online ? ' (online)' : ''}
             </option>
           ))}
-        </select>
+        </PlateSelect>
         {basemapStatus === 'fallback' ? (
           <span className="pill" data-tone="muted" title="Base tiles are unreachable right now — showing the built-in offline basemap. Data stays live.">
             offline basemap

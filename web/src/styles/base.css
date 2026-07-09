@@ -159,6 +159,18 @@ code, .mono {
 }
 .btn-icon:hover { --pg-fill: linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)); }
 
+/* native <select> wearing the plate: the wrapper label carries the sheets,
+   the real select stretches invisibly over it (native popup + a11y intact) */
+.plate-select { gap: 6px; }
+.plate-select select {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; border: none;
+  font-size: 16px; /* prevents iOS focus-zoom */
+}
+.plate-select:focus-within { --pg-border: var(--color-focus-ring); --pg-bw: 2px; }
+.plate-select-value { pointer-events: none; }
+
 /* motion accessibility: hold the sheen still */
 @media (prefers-reduced-motion: reduce) {
   .btn::after { transition: none; background-position: -160% 0, 0 0 !important; }

@@ -318,6 +318,7 @@ interface CurationData {
   mergeCandidates: Array<{ id: string; assetA: string; nameA: string; assetB: string; nameB: string; score: number; reasons: string[]; createdAt: string }>;
   quarantinedFiles: Array<{ id: string; kind: string; fileName: string; createdAt: string }>;
   piiReview: Array<{ id: string; kind: string; fileName: string; createdAt: string }>;
+  errorReports: Array<{ id: string; kind: string; message: string; detail: Record<string, unknown>; appVersion: string | null; userAgent: string | null; createdAt: string }>;
 }
 
 function CurationTab(): JSX.Element {
@@ -471,6 +472,36 @@ function CurationTab(): JSX.Element {
             ))
           )}
         </div>
+      </div>
+
+      <div className="card col">
+        <h2>Error reports ({data.errorReports.length})</h2>
+        {data.errorReports.length === 0 ? (
+          <p className="text-sm text-secondary">No open error reports.</p>
+        ) : (
+          data.errorReports.map((r) => (
+            <div key={r.id} className="card col" style={{ padding: 'var(--space-sm)', gap: 6 }}>
+              <div className="row-wrap">
+                <span className="pill" data-tone={r.kind === 'client_error' || r.kind === 'map_style' ? 'danger' : 'warning'}>{r.kind.replace('_', ' ')}</span>
+                <span className="text-xs text-secondary">{fmtRelative(r.createdAt)}{r.appVersion ? ` · v${r.appVersion}` : ''}</span>
+              </div>
+              <p className="text-sm">{r.message}</p>
+              {r.userAgent ? <p className="text-xs text-secondary">{r.userAgent}</p> : null}
+              <details>
+                <summary className="text-xs text-secondary" style={{ cursor: 'pointer' }}>Diagnostics</summary>
+                <code className="text-xs" style={{ display: 'block', whiteSpace: 'pre-wrap', marginTop: 4 }}>{JSON.stringify(r.detail, null, 2)}</code>
+              </details>
+              <div className="row">
+                <button type="button" className="btn btn-sm" onClick={() => act(() => post(`/admin/error-reports/${r.id}/resolve`, { action: 'resolved' }), 'Report resolved.')}>
+                  Resolved
+                </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => act(() => post(`/admin/error-reports/${r.id}/resolve`, { action: 'dismissed' }), 'Report dismissed.')}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {resolveDispute ? (

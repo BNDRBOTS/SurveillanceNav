@@ -97,6 +97,9 @@ export const config = {
     forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true',
   },
 
+  /** Destination for operator notifications (error reports). Empty = store-only. */
+  adminEmail: process.env.ADMIN_EMAIL ?? '',
+
   mail: {
     transport: env('MAIL_TRANSPORT', isProd ? 'smtp' : 'outbox') as 'smtp' | 'outbox',
     from: env('MAIL_FROM', 'Lens of Light <no-reply@stn.local>'),

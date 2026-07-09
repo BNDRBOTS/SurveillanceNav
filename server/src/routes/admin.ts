@@ -4,6 +4,7 @@ import {
   mergeAssetsSchema,
   updateUserAdminSchema,
   resolveDisputeSchema,
+  resolveErrorReportSchema,
   settingsUpdateSchema,
   uuid as uuidSchema,
   type AdminMetrics,
@@ -242,7 +243,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   /* ------------------------------------------------------------- curation */
 
   app.get('/admin/curation', async () => {
-    const [disputes, flags, mergeCandidates, quarantine, pii] = await Promise.all([
+    const [disputes, flags, mergeCandidates, quarantine, pii, errorReports] = await Promise.all([
       query(
         `SELECT d.id, d.asset_id AS "assetId", a.name AS "assetName", d.user_id AS "userId", u.name AS "userName",
                 d.reason, d.evidence, d.evidence_url AS "evidenceUrl", d.status, d.created_at AS "createdAt"
@@ -274,6 +275,10 @@ export function registerAdminRoutes(app: FastifyInstance): void {
          SELECT id, 'foia_document' AS kind, file_name AS "fileName", created_at AS "createdAt" FROM foia_documents WHERE pii_status = 'flagged' AND scan_status = 'clean'
          ORDER BY "createdAt" DESC LIMIT 100`,
       ),
+      query(
+        `SELECT id, kind, message, detail, app_version AS "appVersion", user_agent AS "userAgent", created_at AS "createdAt"
+         FROM error_reports WHERE status = 'new' ORDER BY created_at DESC LIMIT 100`,
+      ),
     ]);
     return {
       disputes: disputes.rows,
@@ -281,7 +286,28 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       mergeCandidates: mergeCandidates.rows,
       quarantinedFiles: quarantine.rows,
       piiReview: pii.rows,
+      errorReports: errorReports.rows,
     };
+  });
+
+  app.post('/admin/error-reports/:id/resolve', async (req) => {
+    const id = parseOrThrow(uuidSchema, (req.params as { id: string }).id);
+    const body = parseOrThrow(resolveErrorReportSchema, req.body);
+    const res = await query(
+      `UPDATE error_reports SET status = $2, admin_id = $3, resolved_at = now()
+       WHERE id = $1 AND status = 'new'`,
+      [id, body.action, req.user!.id],
+    );
+    if (res.rowCount === 0) throw notFound('Open error report');
+    await audit({
+      actorId: req.user!.id,
+      action: 'admin.error_report_resolved',
+      resource: 'error_report',
+      resourceId: id,
+      metadata: { action: body.action },
+      ip: req.ip,
+    });
+    return { ok: true };
   });
 
   app.post('/admin/disputes/:id/resolve', async (req) => {

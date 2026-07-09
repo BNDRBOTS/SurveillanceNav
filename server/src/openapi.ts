@@ -172,6 +172,13 @@ export const openapiDocument = {
     '/presets/shared/{token}': { get: op('Resolve a shared preset URL (public)', { auth: false, tag: 'reference' }) },
     '/presets/{id}': { delete: op('Delete preset', { tag: 'reference' }) },
 
+    '/feedback/error-report': {
+      post: op('Submit an anonymous diagnostic error report (bounded, PII-free, rate-limited)', {
+        auth: false,
+        body: true,
+        tag: 'feedback',
+      }),
+    },
     '/admin/users': { get: op('List users (admin)', { tag: 'admin' }) },
     '/admin/users/{id}': {
       patch: op('Change role/status (admin, audited)', { body: true, tag: 'admin' }),
@@ -183,7 +190,8 @@ export const openapiDocument = {
     '/admin/jobs/{id}/retry': { post: op('Retry failed job', { tag: 'admin' }) },
     '/admin/schedules/{name}/toggle': { post: op('Enable/disable scheduled job', { tag: 'admin' }) },
     '/admin/schedules/{name}/run': { post: op('Run scheduled job now', { tag: 'admin' }) },
-    '/admin/curation': { get: op('Curation queues: disputes, flags, merge candidates, quarantine, PII review', { tag: 'admin' }) },
+    '/admin/curation': { get: op('Curation queues: disputes, flags, merge candidates, quarantine, PII review, error reports', { tag: 'admin' }) },
+    '/admin/error-reports/{id}/resolve': { post: op('Resolve/dismiss an error report', { body: true, tag: 'admin' }) },
     '/admin/disputes/{id}/resolve': { post: op('Resolve dispute (notifies reporter, recalcs confidence)', { body: true, tag: 'admin' }) },
     '/admin/flags/{id}/resolve': { post: op('Resolve/dismiss flag', { body: true, tag: 'admin' }) },
     '/admin/merge-assets': { post: op('Merge duplicate assets (evidence/disputes/history folded in)', { body: true, tag: 'admin' }) },

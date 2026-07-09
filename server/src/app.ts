@@ -24,6 +24,7 @@ import { registerPolicyRoutes } from './routes/policies.js';
 import { registerReferenceRoutes } from './routes/reference.js';
 import { registerExportRoutes } from './routes/exports.js';
 import { registerAdminRoutes } from './routes/admin.js';
+import { registerFeedbackRoutes } from './routes/feedback.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerNavigationRoutes } from './routes/navigation.js';
 import { registerBillingRoutes } from './routes/billing.js';
@@ -75,6 +76,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       registerAdminRoutes(api);
       registerNavigationRoutes(api);
       registerBillingRoutes(api);
+      registerFeedbackRoutes(api);
       registerHealthRoutes(api);
       api.get('/openapi.json', async () => openapiDocument);
     },

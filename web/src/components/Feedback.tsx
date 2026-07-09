@@ -16,6 +16,18 @@ function ToastItem({ toast }: { toast: Toast }): JSX.Element {
   return (
     <div className="toast" data-tone={toast.tone} role={toast.tone === 'error' ? 'alert' : 'status'}>
       <span style={{ flex: 1 }}>{toast.message}</span>
+      {toast.action ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => {
+            toast.action!.run();
+            dismiss(toast.id);
+          }}
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
       <button type="button" onClick={() => dismiss(toast.id)} aria-label="Dismiss notification">
         <Icon name="x" size={16} />
       </button>
@@ -131,12 +143,13 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 interface BoundaryState {
   error: Error | null;
+  reportState: 'idle' | 'sending' | 'done' | 'failed';
 }
 
 export class ErrorBoundary extends Component<{ children: ReactNode }, BoundaryState> {
-  override state: BoundaryState = { error: null };
+  override state: BoundaryState = { error: null, reportState: 'idle' };
 
-  static getDerivedStateFromError(error: Error): BoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<BoundaryState> {
     return { error };
   }
 
@@ -144,8 +157,24 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, BoundarySt
     console.error('UI error boundary caught:', error);
   }
 
+  private sendReport = async (): Promise<void> => {
+    this.setState({ reportState: 'sending' });
+    try {
+      const { submitErrorReport } = await import('@/lib/errorReport');
+      await submitErrorReport({
+        kind: 'client_error',
+        message: this.state.error?.message ?? 'Unknown UI error',
+        detail: { errorChain: [String(this.state.error?.stack ?? '').slice(0, 300)] },
+      });
+      this.setState({ reportState: 'done' });
+    } catch {
+      this.setState({ reportState: 'failed' });
+    }
+  };
+
   override render(): ReactNode {
     if (this.state.error) {
+      const { reportState } = this.state;
       return (
         <div className="auth-layout">
           <div className="card auth-card col" role="alert">
@@ -155,19 +184,24 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, BoundarySt
               locally.
             </p>
             <code className="text-xs text-secondary">{this.state.error.message}</code>
-            <div className="row">
+            <div className="row-wrap">
               <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
                 Reload
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => this.setState({ error: null })}>
+              <button type="button" className="btn btn-ghost" onClick={() => this.setState({ error: null, reportState: 'idle' })}>
                 Try to continue
               </button>
-              <a
+              <button
+                type="button"
                 className="btn btn-ghost"
-                href={`mailto:support@stn.local?subject=STN%20error%20report&body=${encodeURIComponent(this.state.error.message)}`}
+                onClick={() => void this.sendReport()}
+                disabled={reportState === 'sending' || reportState === 'done'}
               >
-                Report
-              </a>
+                {reportState === 'idle' && 'Send error report'}
+                {reportState === 'sending' && 'Sending…'}
+                {reportState === 'done' && 'Report sent'}
+                {reportState === 'failed' && 'Retry report'}
+              </button>
             </div>
           </div>
         </div>

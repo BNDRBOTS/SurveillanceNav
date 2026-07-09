@@ -203,6 +203,10 @@ export const disputeAssetSchema = z.object({
   evidenceUrl: safeString(500).optional(),
 });
 
+export const resolveErrorReportSchema = z.object({
+  action: z.enum(['resolved', 'dismissed']),
+});
+
 export const resolveDisputeSchema = z.object({
   status: z.enum(DISPUTE_STATUSES),
   resolution: nonEmptyString(5000),
@@ -367,3 +371,28 @@ export const settingsUpdateSchema = z.object({
   key: nonEmptyString(100),
   value: z.unknown(),
 });
+
+/* ------------------------------------------------------------------ *
+ * Error reports — anonymous forensic diagnostics from the client.
+ * Bounded hard: this endpoint accepts unauthenticated traffic.
+ * ------------------------------------------------------------------ */
+export const errorReportSchema = z
+  .object({
+    kind: z.enum(['map_style', 'map_tiles', 'statute', 'content', 'client_error']),
+    message: nonEmptyString(500),
+    detail: z
+      .object({
+        route: safeString(200).optional(),
+        styleId: safeString(40).optional(),
+        errorChain: z.array(safeString(300)).max(10).optional(),
+        mapState: z
+          .object({ lng: z.number().finite(), lat: z.number().finite(), zoom: z.number().finite() })
+          .optional(),
+        viewport: safeString(40).optional(),
+        online: z.boolean().optional(),
+        context: safeString(1000).optional(),
+      })
+      .default({}),
+    appVersion: safeString(40).optional(),
+  })
+  .refine((r) => JSON.stringify(r.detail).length <= 8_192, { message: 'Diagnostic detail too large' });

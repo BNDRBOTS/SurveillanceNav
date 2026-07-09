@@ -7,6 +7,8 @@ export interface Toast {
   tone: 'info' | 'success' | 'warning' | 'error';
   message: string;
   ttlMs: number;
+  /** Optional one-tap action rendered as a button on the toast. */
+  action?: { label: string; run: () => void };
 }
 
 export interface WalkthroughStep {
@@ -39,7 +41,7 @@ interface UiState {
   setAuthReady(): void;
   setWorkspaces(ws: Workspace[]): void;
   setCurrentWorkspace(id: string | null): void;
-  toast(message: string, tone?: Toast['tone'], ttlMs?: number): void;
+  toast(message: string, tone?: Toast['tone'], ttlMs?: number, action?: Toast['action']): void;
   dismissToast(id: number): void;
   setOnline(online: boolean): void;
   setOutboxCount(n: number): void;
@@ -93,11 +95,11 @@ export const useStore = create<UiState>()(
         s.currentWorkspaceId = id;
         if (id) localStorage.setItem('stn.workspace', id);
       }),
-    toast: (message, tone = 'info', ttlMs = 5000) =>
+    toast: (message, tone = 'info', ttlMs = 5000, action?: Toast['action']) =>
       set((s) => {
         // collapse duplicates so retry storms don't stack toasts
         if (s.toasts.some((t) => t.message === message)) return;
-        s.toasts.push({ id: toastSeq++, tone, message, ttlMs });
+        s.toasts.push({ id: toastSeq++, tone, message, ttlMs, ...(action ? { action } : {}) });
         if (s.toasts.length > 4) s.toasts.shift();
       }),
     dismissToast: (id) =>

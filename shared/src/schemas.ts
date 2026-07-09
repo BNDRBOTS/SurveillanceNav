@@ -221,6 +221,17 @@ export const resolveErrorReportSchema = z.object({
   action: z.enum(['resolved', 'dismissed']),
 });
 
+export const updateStatuteSchema = z
+  .object({
+    lawName: nonEmptyString(200).optional(),
+    citation: nonEmptyString(200).optional(),
+    responseDays: z.number().int().min(1).max(120).nullable().optional(),
+    businessDays: z.boolean().optional(),
+    notes: safeString(500).nullable().optional(),
+    sourceUrl: safeString(500).pipe(z.string().url()).nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to update' });
+
 export const resolveDisputeSchema = z.object({
   status: z.enum(DISPUTE_STATUSES),
   resolution: nonEmptyString(5000),

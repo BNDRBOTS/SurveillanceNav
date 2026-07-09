@@ -103,6 +103,19 @@ export const config = {
   /** 'email' = enumeration-safe identification via inbox; 'on-screen' = page states it. */
   resetDisclosureMode: env('RESET_DISCLOSURE_MODE', 'email') as 'email' | 'on-screen',
 
+  /**
+   * Optional LLM for the statute/disclaimer freshness checker. Any
+   * OpenAI-compatible /chat/completions endpoint works — e.g.
+   * DeepSeek (https://api.deepseek.com, model deepseek-reasoner) or
+   * Zhipu GLM (https://open.bigmodel.cn/api/paas/v4, model glm-*).
+   * Unset = the recheck job falls back to hash/citation heuristics.
+   */
+  legalLlm: {
+    apiUrl: process.env.LEGAL_LLM_API_URL ?? '',
+    apiKey: process.env.LEGAL_LLM_API_KEY ?? '',
+    model: process.env.LEGAL_LLM_MODEL ?? '',
+  },
+
   mail: {
     transport: env('MAIL_TRANSPORT', isProd ? 'smtp' : 'outbox') as 'smtp' | 'outbox',
     from: env('MAIL_FROM', 'Lens of Light <no-reply@stn.local>'),

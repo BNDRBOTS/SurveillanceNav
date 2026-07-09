@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { Icon, type IconName } from './Icon';
+import { LegalNotice } from './LegalNotice';
 
 /* Icons carry their own purpose hue (see Icon.tsx tone map); active route
    gets full presence + glow, inactive stays colored but recedes. */
@@ -31,6 +32,7 @@ export function SideNav(): JSX.Element {
         </NavLink>
       ))}
       <span className="spacer" />
+      <LegalNotice style={{ padding: '0 var(--space-sm) var(--space-xs)' }} />
       <NavLink to="/help" className="text-xs">
         {({ isActive }) => (
           <>

@@ -14,6 +14,7 @@ import type { JobHandler } from '../queue.js';
 import { runImportRegion, refreshDeflockMetros, type Bbox } from '../../services/overpass.js';
 
 export const scheduleDefaults: Array<{ name: string; description: string; intervalSec: number }> = [
+  { name: 'statute_recheck', description: 'Refetch each statute\'s authoritative source page; on drift, file a change proposal for admin review (LLM-assisted when configured). Never auto-publishes.', intervalSec: 604_800 },
   { name: 'integrity_check', description: 'Detect duplicate assets, orphaned evidence, and records missing jurisdictions; queue for curator review.', intervalSec: 21_600 },
   { name: 'retention_enforcement', description: 'Enforce data retention: purge/anonymize per policy, archive then prune expired audit logs, clean idempotency keys & stale notifications. Emits a compliance report.', intervalSec: 86_400 },
   { name: 'cache_warmup', description: 'Pre-warm asset query cache for the most active regions at off-peak.', intervalSec: 3_600 },
@@ -449,6 +450,12 @@ const dedupeScanOne: JobHandler = async (payload) => {
 
 /* ------------------------------------------------------------------ */
 
+const statuteRecheckJob: JobHandler = async () => {
+  const { recheckStatutes } = await import('../../services/statutes.js');
+  const result = await recheckStatutes();
+  return { ...result };
+};
+
 const parseProcurementJob: JobHandler = async (payload) => {
   const procurementId = String(payload.procurementId ?? '');
   const proc = await queryOne<{ id: string; raw_file_key: string | null; raw_text_excerpt: string | null; title: string }>(
@@ -758,5 +765,6 @@ export const jobDefinitions: Record<string, JobHandler> = {
   foia_deadline_check: foiaDeadlineCheck,
   dedupe_scan_one: dedupeScanOne,
   parse_procurement: parseProcurementJob,
+  statute_recheck: statuteRecheckJob,
   generate_export: generateExport,
 };

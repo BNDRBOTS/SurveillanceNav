@@ -22,6 +22,7 @@ import { TextInput, TextArea, Select, FileDrop } from '@/components/Form';
 import { ConfirmDialog, Modal } from '@/components/Modal';
 import { useDebounce } from '@/lib/useDebounce';
 import { useWalkthrough } from '@/lib/tours';
+import { LegalNotice } from '@/components/LegalNotice';
 
 /* ------------------------------- list ------------------------------- */
 
@@ -300,13 +301,16 @@ export function FoiaNewPage(): JSX.Element {
             2 · Review & edit
           </h2>
           {statute ? (
-            <div className="banner" data-tone="info" style={{ borderRadius: 'var(--radius-md)' }}>
-              <Icon name="scale" size={14} /> {statute.lawName} ({statute.citation}) —{' '}
-              {statute.responseDays
-                ? `${statute.responseDays} ${statute.businessDays ? 'business' : 'calendar'} day response window`
-                : 'reasonable-time response standard'}
-              {statute.notes ? ` · ${statute.notes}` : ''}
-            </div>
+            <>
+              <div className="banner" data-tone="info" style={{ borderRadius: 'var(--radius-md)' }}>
+                <Icon name="scale" size={14} /> {statute.lawName} ({statute.citation}) —{' '}
+                {statute.responseDays
+                  ? `${statute.responseDays} ${statute.businessDays ? 'business' : 'calendar'} day response window`
+                  : 'reasonable-time response standard'}
+                {statute.notes ? ` · ${statute.notes}` : ''}
+              </div>
+              <LegalNotice kind="statute" context={`FOIA composer · ${statute.citation}`} />
+            </>
           ) : null}
           <TextInput label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Compose above or write your own" />
           <TextArea label="Request letter" value={body} onChange={(e) => setBody(e.target.value)} rows={16} style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--font-size-sm)' }} />

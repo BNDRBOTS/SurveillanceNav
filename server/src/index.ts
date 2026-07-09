@@ -47,6 +47,13 @@ async function main(): Promise<void> {
   }
 
   const app = await buildApp();
+  try {
+    const { ensureStatutesSeeded } = await import('./services/statutes.js');
+    const seeded = await ensureStatutesSeeded();
+    if (seeded > 0) process.stdout.write(`[statutes] seeded ${seeded} jurisdictions\n`);
+  } catch (err) {
+    process.stderr.write(`[statutes] seed skipped: ${(err as Error).message}\n`);
+  }
   await startScheduler();
   startQueueWorkers();
 

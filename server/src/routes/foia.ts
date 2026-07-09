@@ -4,7 +4,6 @@ import {
   updateFoiaSchema,
   listFoiaQuery,
   uuid as uuidSchema,
-  statuteForState,
   computeFoiaDueDate,
   DISCLAIMER_VERSIONS,
   LIMITS,
@@ -16,6 +15,7 @@ import { requireAuth, workspaceRole } from '../plugins/auth.js';
 import { badRequest, notFound, payloadTooLarge } from '../lib/errors.js';
 import { audit } from '../services/audit.js';
 import { scanUpload } from '../services/scanner.js';
+import { statuteFor } from '../services/statutes.js';
 import { storage, foiaDocKey, quarantineKey } from '../storage/index.js';
 
 const FOIA_SELECT = `
@@ -34,7 +34,7 @@ async function findStatuteFor(jurisdictionId: string | null) {
     [jurisdictionId],
   );
   for (let depth = 0; current && depth < 5; depth += 1) {
-    if (current.type === 'state') return statuteForState(current.name);
+    if (current.type === 'state') return statuteFor(current.name);
     if (current.type === 'country') return null;
     if (!current.parent_id) return null;
     current = await queryOne(`SELECT id, name, type, parent_id FROM jurisdictions WHERE id = $1`, [current.parent_id]);

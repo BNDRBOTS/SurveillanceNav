@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
+import { activeStatutes } from '../services/statutes.js';
 import {
   createJurisdictionSchema,
   createSourceSchema,
   updateSourceSchema,
   layerPresetSchema,
   uuid as uuidSchema,
-  FOIA_STATUTES,
   FEDERAL_FOIA,
 } from '@stn/shared';
 import { parseOrThrow } from '../lib/validation.js';
@@ -141,7 +141,14 @@ export function registerReferenceRoutes(app: FastifyInstance): void {
   /* ---------------------------------------------------------- statutes (public reference) */
 
   app.get('/reference/foia-statutes', async () => {
-    return { federal: FEDERAL_FOIA, states: FOIA_STATUTES };
+    const all = await activeStatutes();
+    const federal = all.find((s) => s.abbr === 'US') ?? FEDERAL_FOIA;
+    const territoryKeys = new Set(['PR', 'GU', 'VI', 'MP', 'AS']);
+    return {
+      federal,
+      states: all.filter((s) => s.abbr !== 'US' && !territoryKeys.has(s.abbr)),
+      territories: all.filter((s) => territoryKeys.has(s.abbr)),
+    };
   });
 
   /* ---------------------------------------------------------- layer presets */

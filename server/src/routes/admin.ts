@@ -5,6 +5,7 @@ import {
   updateUserAdminSchema,
   resolveDisputeSchema,
   resolveErrorReportSchema,
+  updateStatuteSchema,
   settingsUpdateSchema,
   uuid as uuidSchema,
   type AdminMetrics,
@@ -288,6 +289,103 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       piiReview: pii.rows,
       errorReports: errorReports.rows,
     };
+  });
+
+  /* -------------------------------------------------------- statutes */
+
+  app.get('/admin/statutes', async () => {
+    const [active, proposals] = await Promise.all([
+      query(
+        `SELECT id, jurisdiction_key AS "key", state, law_name AS "lawName", citation,
+                response_days AS "responseDays", business_days AS "businessDays", notes, source_url AS "sourceUrl",
+                version, checked_at AS "checkedAt", checked_by AS "checkedBy"
+         FROM statutes WHERE review_status = 'approved' AND superseded_at IS NULL ORDER BY state`,
+      ),
+      query(
+        `SELECT p.id, p.jurisdiction_key AS "key", p.state, p.law_name AS "lawName", p.citation,
+                p.response_days AS "responseDays", p.business_days AS "businessDays",
+                p.proposed_changes AS "proposedChanges", p.source_excerpt AS "sourceExcerpt", p.llm_model AS "llmModel",
+                p.created_at AS "createdAt",
+                a.law_name AS "currentLawName", a.citation AS "currentCitation",
+                a.response_days AS "currentResponseDays", a.business_days AS "currentBusinessDays"
+         FROM statutes p
+         LEFT JOIN statutes a ON a.jurisdiction_key = p.jurisdiction_key
+           AND a.review_status = 'approved' AND a.superseded_at IS NULL
+         WHERE p.review_status = 'needs_review' ORDER BY p.created_at`,
+      ),
+    ]);
+    const { legalLlmAvailable } = await import('../services/statutes.js');
+    return { active: active.rows, proposals: proposals.rows, llmConfigured: legalLlmAvailable() };
+  });
+
+  app.post('/admin/statutes/:id/approve', async (req) => {
+    const id = parseOrThrow(uuidSchema, (req.params as { id: string }).id);
+    const proposal = await queryOne<{ jurisdiction_key: string }>(
+      `SELECT jurisdiction_key FROM statutes WHERE id = $1 AND review_status = 'needs_review'`,
+      [id],
+    );
+    if (!proposal) throw notFound('Statute proposal');
+    await withTransaction(async (tx) => {
+      await tx.query(
+        `UPDATE statutes SET superseded_at = now()
+         WHERE jurisdiction_key = $1 AND review_status = 'approved' AND superseded_at IS NULL`,
+        [proposal.jurisdiction_key],
+      );
+      await tx.query(
+        `UPDATE statutes SET review_status = 'approved', effective_from = now(), created_by = $2 WHERE id = $1`,
+        [id, req.user!.id],
+      );
+    });
+    const { invalidateStatuteCache } = await import('../services/statutes.js');
+    await invalidateStatuteCache();
+    await audit({ actorId: req.user!.id, action: 'admin.statute_approved', resource: 'statute', resourceId: id, ip: req.ip });
+    return { ok: true };
+  });
+
+  app.post('/admin/statutes/:id/reject', async (req) => {
+    const id = parseOrThrow(uuidSchema, (req.params as { id: string }).id);
+    const res = await query(
+      `UPDATE statutes SET review_status = 'rejected' WHERE id = $1 AND review_status = 'needs_review'`,
+      [id],
+    );
+    if (res.rowCount === 0) throw notFound('Statute proposal');
+    await audit({ actorId: req.user!.id, action: 'admin.statute_rejected', resource: 'statute', resourceId: id, ip: req.ip });
+    return { ok: true };
+  });
+
+  app.patch('/admin/statutes/:key', async (req) => {
+    const key = String((req.params as { key: string }).key).toUpperCase().slice(0, 4);
+    const body = parseOrThrow(updateStatuteSchema, req.body);
+    const current = await queryOne<{ id: string; state: string; law_name: string; citation: string; response_days: number | null; business_days: boolean; notes: string | null; source_url: string | null; version: number }>(
+      `SELECT id, state, law_name, citation, response_days, business_days, notes, source_url, version
+       FROM statutes WHERE jurisdiction_key = $1 AND review_status = 'approved' AND superseded_at IS NULL`,
+      [key],
+    );
+    if (!current) throw notFound('Statute');
+    await withTransaction(async (tx) => {
+      await tx.query(`UPDATE statutes SET superseded_at = now() WHERE id = $1`, [current.id]);
+      await tx.query(
+        `INSERT INTO statutes (jurisdiction_key, state, law_name, citation, response_days, business_days, notes, source_url,
+                               version, review_status, checked_at, checked_by, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', now(), 'admin', $10)`,
+        [
+          key,
+          current.state,
+          body.lawName ?? current.law_name,
+          body.citation ?? current.citation,
+          body.responseDays !== undefined ? body.responseDays : current.response_days,
+          body.businessDays ?? current.business_days,
+          body.notes !== undefined ? body.notes : current.notes,
+          body.sourceUrl !== undefined ? body.sourceUrl : current.source_url,
+          current.version + 1,
+          req.user!.id,
+        ],
+      );
+    });
+    const { invalidateStatuteCache } = await import('../services/statutes.js');
+    await invalidateStatuteCache();
+    await audit({ actorId: req.user!.id, action: 'admin.statute_edited', resource: 'statute', resourceId: key, metadata: body, ip: req.ip });
+    return { ok: true };
   });
 
   app.post('/admin/error-reports/:id/resolve', async (req) => {

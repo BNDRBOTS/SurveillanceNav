@@ -21,6 +21,8 @@ export interface FoiaStatute {
   responseDays: number | null;
   businessDays: boolean;
   notes?: string;
+  /** Authoritative page for the statute text — the recheck job refetches it. */
+  sourceUrl?: string;
 }
 
 export const FOIA_STATUTES: FoiaStatute[] = [
@@ -84,12 +86,74 @@ export const FEDERAL_FOIA: FoiaStatute = {
   citation: '5 U.S.C. § 552',
   responseDays: 20,
   businessDays: true,
+  sourceUrl: 'https://www.justice.gov/oip/freedom-information-act-5-usc-552',
 };
+
+/**
+ * U.S. territories — verified against authoritative sources, July 2026.
+ * Where a territory has no fixed statutory production deadline, responseDays
+ * is null and the note states the actual standard; the tracker falls back to
+ * its 10-business-day follow-up reminder.
+ */
+export const TERRITORY_STATUTES: FoiaStatute[] = [
+  {
+    state: 'Puerto Rico',
+    abbr: 'PR',
+    lawName: 'Ley de Transparencia y Procedimiento Expedito para el Acceso a la Información Pública',
+    citation: 'Ley Núm. 141-2019',
+    responseDays: 10,
+    businessDays: true,
+    notes: '10 business days, extendable once by 10 more; open to any person, resident or not.',
+    sourceUrl: 'https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/141-2019.pdf',
+  },
+  {
+    state: 'Guam',
+    abbr: 'GU',
+    lawName: 'Sunshine Reform Act of 1999',
+    citation: '5 GCA ch. 10',
+    responseDays: 4,
+    businessDays: true,
+    notes: 'Four working days to produce or explain; among the shortest windows in US law.',
+    sourceUrl: 'https://guamcourts.gov/Sunshine-Act/images/Title%205%20Chapter%2010.pdf',
+  },
+  {
+    state: 'U.S. Virgin Islands',
+    abbr: 'VI',
+    lawName: 'Virgin Islands public records law',
+    citation: '3 V.I.C. § 881',
+    responseDays: null,
+    businessDays: true,
+    notes: 'Inspection right with no fixed statutory production deadline.',
+    sourceUrl: 'https://law.justia.com/codes/virgin-islands/2019/title-3/chapter-33/881/',
+  },
+  {
+    state: 'Northern Mariana Islands',
+    abbr: 'MP',
+    lawName: 'CNMI Open Government Act',
+    citation: '1 CMC § 9901 et seq.',
+    responseDays: null,
+    businessDays: true,
+    notes: 'Access right under the Open Government Act; no fixed production deadline.',
+    sourceUrl: 'https://cnmilaw.org/pdf/public_laws/09/pl09-02.pdf',
+  },
+  {
+    state: 'American Samoa',
+    abbr: 'AS',
+    lawName: 'American Samoa public-records provisions',
+    citation: 'A.S.C.A. tit. 4, ch. 11',
+    responseDays: null,
+    businessDays: true,
+    notes: 'No comprehensive public-records act; access governed by Title 4 provisions and agency practice.',
+    sourceUrl: 'https://legalaffairs.as.gov/public-records-1',
+  },
+];
 
 export function statuteForState(stateNameOrAbbr: string): FoiaStatute | null {
   const needle = stateNameOrAbbr.trim().toLowerCase();
   return (
-    FOIA_STATUTES.find((s) => s.state.toLowerCase() === needle || s.abbr.toLowerCase() === needle) ?? null
+    [...FOIA_STATUTES, ...TERRITORY_STATUTES].find(
+      (s) => s.state.toLowerCase() === needle || s.abbr.toLowerCase() === needle,
+    ) ?? null
   );
 }
 

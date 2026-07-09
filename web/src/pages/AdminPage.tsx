@@ -504,6 +504,8 @@ function CurationTab(): JSX.Element {
         )}
       </div>
 
+      <StatuteReviewCard act={act} />
+
       {resolveDispute ? (
         <ResolveDisputeModal
           dispute={resolveDispute}
@@ -745,6 +747,87 @@ function SettingsTab(): JSX.Element {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+
+/* --------------------------- statute review --------------------------- */
+
+interface StatuteAdminData {
+  active: Array<{ id: string; key: string; state: string; lawName: string; citation: string; responseDays: number | null; businessDays: boolean; version: number; checkedAt: string | null; checkedBy: string | null }>;
+  proposals: Array<{
+    id: string; key: string; state: string; lawName: string; citation: string;
+    responseDays: number | null; businessDays: boolean;
+    proposedChanges: Record<string, unknown>; sourceExcerpt: string | null; llmModel: string | null; createdAt: string;
+    currentLawName: string | null; currentCitation: string | null; currentResponseDays: number | null; currentBusinessDays: boolean | null;
+  }>;
+  llmConfigured: boolean;
+}
+
+function StatuteReviewCard({ act }: { act: (fn: () => Promise<unknown>, success: string) => Promise<void> }): JSX.Element {
+  const { data, refetch } = useQuery({
+    queryKey: ['admin-statutes'],
+    queryFn: () => get<StatuteAdminData>('/admin/statutes'),
+  });
+  if (!data) return <div className="card col"><h2>Statute review</h2><Skeleton count={2} height={20} /></div>;
+  const fmtDays = (d: number | null, b: boolean) => (d === null ? 'no fixed deadline' : `${d} ${b ? 'business' : 'calendar'} days`);
+  return (
+    <div className="card col">
+      <h2>Statute review ({data.proposals.length})</h2>
+      <p className="text-xs text-secondary">
+        {data.active.length} jurisdictions tracked · weekly source recheck ·{' '}
+        {data.llmConfigured ? 'LLM extraction active' : 'LLM extraction not configured (heuristic drift detection only) — set LEGAL_LLM_API_URL/KEY/MODEL to enable'}
+      </p>
+      {data.proposals.length === 0 ? (
+        <p className="text-sm text-secondary">No pending statute change proposals.</p>
+      ) : (
+        data.proposals.map((p) => (
+          <div key={p.id} className="card col" style={{ padding: 'var(--space-sm)', gap: 6 }}>
+            <div className="row-wrap">
+              <strong className="text-sm">{p.state}</strong>
+              {p.llmModel ? <span className="pill" data-tone="accent">{p.llmModel}</span> : <span className="pill" data-tone="muted">heuristic</span>}
+              <span className="text-xs text-secondary">{fmtRelative(p.createdAt)}</span>
+            </div>
+            <dl className="kv">
+              <dt>Law</dt>
+              <dd>{p.currentLawName !== p.lawName ? <><s className="text-secondary">{p.currentLawName}</s> → <strong>{p.lawName}</strong></> : p.lawName}</dd>
+              <dt>Citation</dt>
+              <dd>{p.currentCitation !== p.citation ? <><s className="text-secondary">{p.currentCitation}</s> → <strong>{p.citation}</strong></> : p.citation}</dd>
+              <dt>Deadline</dt>
+              <dd>
+                {p.currentResponseDays !== p.responseDays || p.currentBusinessDays !== p.businessDays ? (
+                  <>
+                    <s className="text-secondary">{fmtDays(p.currentResponseDays, p.currentBusinessDays ?? true)}</s> →{' '}
+                    <strong>{fmtDays(p.responseDays, p.businessDays)}</strong>
+                  </>
+                ) : (
+                  fmtDays(p.responseDays, p.businessDays)
+                )}
+              </dd>
+            </dl>
+            {(p.proposedChanges as { note?: string }).note ? (
+              <p className="text-xs text-warning">{String((p.proposedChanges as { note?: string }).note)}</p>
+            ) : null}
+            {p.sourceExcerpt ? (
+              <details>
+                <summary className="text-xs text-secondary" style={{ cursor: 'pointer' }}>Source excerpt</summary>
+                <blockquote className="text-xs" style={{ margin: '4px 0 0', paddingLeft: 'var(--space-sm)', borderLeft: '2px solid var(--color-border-strong)' }}>
+                  {p.sourceExcerpt}
+                </blockquote>
+              </details>
+            ) : null}
+            <div className="row">
+              <button type="button" className="btn btn-sm" onClick={() => act(async () => { await post(`/admin/statutes/${p.id}/approve`); await refetch(); }, 'Statute updated — new version is live.')}>
+                Approve
+              </button>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => act(async () => { await post(`/admin/statutes/${p.id}/reject`); await refetch(); }, 'Proposal rejected — current statute stays.')}>
+                Reject
+              </button>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }

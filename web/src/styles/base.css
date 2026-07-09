@@ -778,6 +778,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size
 :root[data-contrast="high"] .icon-duo path,
 :root[data-contrast="high"] .icon-duo circle { stroke: currentColor !important; }
 :root[data-contrast="high"] .icon-duo [data-layer="dim"] { display: none; }
+:root[data-contrast="high"] .icon-duo [data-layer="facet"] { display: none; }
 :root[data-contrast="high"] .icon-duo [data-layer="spark"] [fill] { fill: currentColor !important; }
 
 /* ── persistent responsibility notice ────────────────────────────── */

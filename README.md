@@ -38,13 +38,14 @@ login — MFA is enforced for administrators. The **first signup on an empty dat
 | --- | --- |
 | **Map** | MapLibre GL with bundled offline vector basemap (zero tile dependency), optional OSM/Esri raster, Supercluster + server-side grid clustering at low zoom (scales to 100k+ points), heatmap, per-technology layers, radius analysis with real distances, jurisdiction comparison, shareable URL state & saved views with share tokens, click-to-add submissions |
 | **Trust engine** | Source registry with verification states, explainable 0–100 confidence scores (tap any score for the factor breakdown), immutable diffed change history, evidence uploads (malware + PII scanned, quarantine queue), disputes with mandatory admin resolution, automatic duplicate detection → merge workflow |
-| **FOIA** | Template library + composer that cites the governing public-records statute for all 50 states + DC + federal, computes the statutory response deadline when marked sent, deadline reminders (in-app + email), document repository with redaction annotations, outcome tagging |
+| **FOIA** | Template library + composer that cites the governing public-records statute for federal, all 50 states + DC, and the U.S. territories — served from a versioned statute store rechecked weekly against official sources (drift files an admin-reviewed change proposal; nothing auto-publishes), computes the statutory response deadline when marked sent, deadline reminders (in-app + email), document repository with redaction annotations, outcome tagging, versioned legal acknowledgment before first submission |
 | **Procurement** | Paste text or upload contract/RFP PDFs → async extraction of vendor, amounts, dates, technology terms with per-field evidence and confidence; human review queue; admin-gated publication |
 | **Collaboration** | Workspaces with viewer/editor/admin roles (deny-by-default), email invites, @mention comments with notifications, workspace-shared map views |
 | **Exports** | CSV (formula-injection safe), JSON, GeoJSON, KML, and PDF/HTML reports with vector map snapshots and methodology notes — generated async, short-TTL HMAC-signed downloads, automatic expiry |
 | **Offline / PWA** | Installable; service worker with cache strategies per resource; IndexedDB outbox replays queued submissions with idempotency keys (conflict-safe); dataset caches are SHA-256 integrity-checked on restore |
-| **Admin console** | Live metrics (p95 latency, error rate, cache hit ratio, DB/storage health), user management, curation queues (disputes/flags/merges/quarantine/PII), job queue with retry, 10 scheduled maintenance jobs with run-now/toggle, runtime settings + feature flags, audited rate-limit override, append-only audit log explorer |
-| **Security** | scrypt passwords, 15-min HS256 JWTs + rotating refresh tokens with reuse detection (family revocation), TOTP MFA (required for admins), CSRF double-submit, strict CSP & full security-header suite, per-user+IP rate limiting with Retry-After, JSON-bomb guards, zero-width input sanitation, account lockout, append-only audit DB triggers |
+| **Admin console** | Live metrics (p95 latency, error rate, cache hit ratio, DB/storage health), user management, curation queues (disputes/flags/merges/quarantine/PII/error reports/statute proposals), job queue with retry, 11 scheduled maintenance jobs with run-now/toggle, runtime settings + feature flags, audited rate-limit override, append-only audit log explorer |
+| **Public site** | Marketing landing at `/` (signed-in users skip to the map) with live counts from `GET /api/v1/stats`, versioned entry disclaimer, persistent responsibility notice with one-tap error reports (stored; emailed to `ADMIN_EMAIL` when SMTP is configured), anchored coach-mark walkthroughs on desktop |
+| **Security** | scrypt passwords, 15-min HS256 JWTs + rotating refresh tokens with reuse detection (family revocation), TOTP MFA (required for admins) with one-time recovery codes, enumeration-safe account recovery (unknown addresses get a courtesy email, never an on-screen tell), CSRF double-submit, strict CSP & full security-header suite, per-user+IP rate limiting with Retry-After, JSON-bomb guards, zero-width input sanitation, account lockout, append-only audit DB triggers |
 
 ## Architecture
 
@@ -109,6 +110,12 @@ AGPL-3.0 — transparency tooling should stay transparent.
    `PUBLIC_URL=https://<your-app>.up.railway.app` ·
    `JWT_SECRET` / `REFRESH_SECRET` / `DOWNLOAD_SECRET` (three different random strings —
    generate each with `openssl rand -base64 48` or any password generator, 40+ chars).
+   Optional: `ADMIN_EMAIL` (error-report notifications), `RESET_DISCLOSURE_MODE`
+   (`email` default, or `on-screen`), `LEGAL_LLM_API_URL` / `LEGAL_LLM_API_KEY` /
+   `LEGAL_LLM_MODEL` (OpenAI-compatible endpoint — e.g. DeepSeek `https://api.deepseek.com`
+   model `deepseek-reasoner`, or GLM `https://open.bigmodel.cn/api/paas/v4` — used only to
+   summarize statute-source changes for admin review; a citation heuristic runs without it),
+   `BRAND_LOGO_URL` (upstream for the footer brand mark, fetched once and cached).
 5. **Attach a Volume** mounted at `/data` and set `STORAGE_LOCAL_DIR=/data/storage`
    (Railway's filesystem is wiped on redeploy — the volume keeps uploads, exports, and backups).
    Or set `STORAGE_BACKEND=s3` with any S3/R2 credentials instead.

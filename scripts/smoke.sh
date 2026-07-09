@@ -55,6 +55,10 @@ check "malformed bbox → 422"           "curl -s -o /dev/null -w '%{http_code}'
 check "evidence upload (txt)"          "curl -fsS -X POST $BASE/api/v1/assets/$AID/evidence -H '$AUTH' -F 'file=@/etc/hostname;type=text/plain' | grep -q evidenceId"
 
 # --- FOIA -----------------------------------------------------------------
+# The FOIA gate refuses submissions until the versioned legal disclaimer is
+# acknowledged (400 ack_required) — acknowledge it the way the UI does.
+check "FOIA gate refuses before acknowledgment" "curl -s -X POST $BASE/api/v1/foia -H '$AUTH' -H 'content-type: application/json' -d '{\"workspaceId\":\"$WS\",\"subject\":\"x\",\"body\":\"pre-ack should fail\"}' | grep -q 'ack_required'"
+check "acknowledge foia-legal disclaimer"      "curl -fsS -X POST $BASE/api/v1/users/me/acknowledgments -H '$AUTH' -H 'content-type: application/json' -d '{\"key\":\"foia-legal\",\"version\":1}' | grep -q '\"ok\":true'"
 TPL=$(curl -fsS "$BASE/api/v1/foia/templates" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 JUR=$(curl -fsS "$BASE/api/v1/jurisdictions?q=San%20Francisco" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 COMPOSE=$(curl -fsS -X POST "$BASE/api/v1/foia/compose" -H "$AUTH" -H 'content-type: application/json' \

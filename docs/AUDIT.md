@@ -130,3 +130,101 @@ Honest notes: OSRM public demo = best-effort avoidance only (clearly labeled in 
 ORS free key or Valhalla for guarantees); Google handoff approximates the avoidance route via ≤8
 pinned waypoints (stated in the UI); Stripe flows are mocked in tests — run one live test-mode
 checkout after setting keys.
+
+---
+
+## Directive pass — July 2026 (10 items, zero-regression constraint)
+
+Scope: verify → strategize → execute on ten directed items. Every phase closed
+with the full gate green before the next began; no feature was reduced,
+removed, or simplified.
+
+**1 · Account identification.** Password reset now identifies accounts without
+enumeration: every tried address gets an email — a reset link when registered,
+a courtesy "no account under this address" notice (24h-throttled by address
+hash) when not. Responses are byte-identical and timing-equalized (350ms
+floor). Admins can switch to on-screen disclosure (`auth.resetDisclosure`
+setting / `RESET_DISCLOSURE_MODE`). Ten one-time scrypt-hashed recovery codes
+issue at signup (shown once, regenerable in Settings with password), redeem in
+place of TOTP at login and as an email-less reset path, with use alerts.
+
+**2 · Base-tile errors.** Raster failures feed a pure state machine
+(3-error threshold, 4s grace, any loaded tile vetoes) instead of toasting on
+the first error; fallback to the offline basemap is silent with a map-chrome
+pill. A toast appears only if the fallback itself fails, carrying a one-tap
+forensic error report (route, map state, error chain, UA — no PII) stored
+server-side and emailed to `ADMIN_EMAIL` when configured, with truthful
+delivery copy either way.
+
+**3 · Icon craft.** Every glyph rebuilt on a five-layer system: dim fill,
+detail linework receding at ~0.63× weight, full-weight structure, light-tone
+facet catch-lights, champagne spark. Deep redraws on the twelve most visible
+glyphs; footprints redrawn entirely. Iterated against rendered contact sheets
+at 16/20/28/40px over three rounds; 8 tests pin the layer contract.
+
+**4 · Mode selector.** The map toolbar's raw `<select>` became PlateSelect —
+the same clipped parallelogram plate as its neighbors, with the native select
+stretched invisibly over it (mobile pickers and a11y intact).
+
+**5 · Full test suite.** Everything runs and passes; failures found along the
+way were fixed at the cause (see the walkthrough-death bug in item 10).
+
+**6 · Statutes, live.** Versioned `statutes` store (one active row per
+jurisdiction) seeds federal + 50 states + DC + PR/GU/VI/AS/MP — territory
+deadlines modeled honestly, including null where no statute sets one. Weekly
+`statute_recheck` job refetches each source URL, hashes content, and files
+needs-review proposals on drift (LLM summary via optional OpenAI-compatible
+`LEGAL_LLM_*` config; citation heuristic otherwise). Proposals never
+auto-publish and never duplicate; admins approve (supersede + version bump),
+reject, or PATCH directly. The previously dead `foia.deadlineOverrides`
+setting is now honored. A persistent responsibility notice with one-tap
+reporting rides the side nav and the FOIA statute banner.
+
+**7 · Disclaimers.** Exactly two gates, versioned and append-only: a blocking
+entry acknowledgment (anonymous acks in localStorage, synced to the account on
+login) and a FOIA legal gate enforced server-side (400 `ack_required`).
+Copy grounded in the DeFlock legal record as of July 2026 — trademark
+non-affiliation/nominative use, acceptable-use limits, accuracy/as-is, ODbL —
+with builder-to-builder credit to Will Freeman on Support, Help, and the
+landing.
+
+**8 · Text sanitization, proven.** Control characters stripped in the shared
+schema; comments deduped (409) and rate-limited; `detectPii`
+(SSN/CC-Luhn/email/phone/DOB) holds free text for author confirmation and
+routes flagged kinds to admins — @mentions are blanked before scanning so the
+mention feature keeps working. An adversarial battery (XSS payloads,
+zero-width, SQLi strings, boundary sizes, dup storms, PII seeds) asserts
+observed end-to-end behavior, not code presence.
+
+**9 · Marketing site.** `/` is a production landing outside the app shell:
+hero, live counts from the new public `GET /api/v1/stats`, real product
+screenshot, capabilities/method/security sections, shared FAQ, and a footer
+with legal links, vendor non-affiliation, and data credits. Signed-in
+visitors skip to the map. A test bans over-claims. The BNDR mark serves
+same-origin: a repo file wins; otherwise the server fetches `BRAND_LOGO_URL`
+once and caches to disk; otherwise a styled wordmark renders. OG/Twitter
+meta + generated card.
+
+**10 · Walkthrough v2.** Anchored steps render as floating heavy-glass
+coach-marks pointing at their real controls (13 anchors across seven tours)
+with collision-aware placement, a highlight ring, and pointer tilt ≤4°
+(off under reduced motion); mobile and missing targets fall back to the
+bottom card. Fixed a latent bug this exposed: pages that rewrite their query
+string after mount (map filter sync drops `?tour=1`) were killing the tour
+via the hook's cleanup.
+
+### Final gate
+
+| Gate | Result |
+| --- | --- |
+| TypeScript strict / ESLint / WCAG contrast | 0 errors / 0 errors / **49/49** |
+| Server tests (now incl. recovery, acknowledgments, statutes store + recheck, error reports, adversarial text battery) | **136/136 pass** (was 88) |
+| Web tests (now incl. icon layers, coach-marks, landing, raster health, entry gate) | **59/59 pass** (was 17) |
+| E2E smoke vs production bundle (now incl. landing, public stats, brand route, og image, FOIA ack gate) | **40/40 pass** (was 34) |
+| Bundle budget (initial JS gz, map vendor excluded) | **137KB of 200KB** — landing is lazy |
+
+Verified live in a real browser this pass: entry disclaimer accept, map tour
+coach-marks (placement, ring, tilt) on desktop, landing on desktop and mobile,
+landing CTA → map, stats endpoint, brand-route fallback behavior (upstream
+unreachable here by policy — the 404 → wordmark path is the one exercised),
+and icon contact sheets at four sizes.

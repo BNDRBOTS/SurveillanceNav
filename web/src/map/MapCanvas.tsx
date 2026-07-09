@@ -593,7 +593,7 @@ export function MapCanvas({
           )}
         </button>
       </div>
-      <div className="map-legend" aria-label="Legend">
+      <div className="map-legend" data-tour="map-legend" aria-label="Legend">
         {Object.entries(TECH_COLORS)
           .filter(([tech]) => layers.techVisible[tech])
           .map(([tech, color]) => (

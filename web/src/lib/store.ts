@@ -14,6 +14,9 @@ export interface Toast {
 export interface WalkthroughStep {
   title: string;
   body: string;
+  /** Optional `data-tour` token — on desktop the step renders as a floating
+      coach-mark pointing at the matching element instead of the bottom card. */
+  anchor?: string;
 }
 
 export interface WalkthroughState {

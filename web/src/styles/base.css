@@ -527,6 +527,52 @@ textarea.input { resize: vertical; min-height: 96px; }
 }
 .toast.walkthrough .btn { min-height: 34px; }
 
+/* ── walkthrough v2: anchored coach-marks (desktop) ──────────────── */
+/* Deliberately neutral heavy glass — smoked charcoal, thin lit border,
+   violet pointer accents — so it floats above any page without stealing
+   the champagne accent reserved for content. */
+.coachmark {
+  --tour-accent: #A18FFF;
+  position: fixed; z-index: calc(var(--z-toast) + 1);
+  width: min(360px, calc(100vw - 24px));
+  padding: var(--space-sm) var(--space-md);
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-lit);
+  box-shadow: var(--shadow-3), 0 0 26px rgba(161, 143, 255, 0.10);
+  font-size: var(--font-size-sm); line-height: var(--line-height-sm);
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 120ms ease-out;
+  animation: coachmark-in var(--motion-duration-med) var(--motion-ease);
+}
+.coachmark[data-place="bottom"] { border-top-color: rgba(161, 143, 255, 0.55); }
+.coachmark[data-place="top"]    { border-bottom-color: rgba(161, 143, 255, 0.55); }
+.coachmark[data-place="right"]  { border-left-color: rgba(161, 143, 255, 0.55); }
+.coachmark[data-place="left"]   { border-right-color: rgba(161, 143, 255, 0.55); }
+.coachmark .btn { min-height: 34px; }
+.coachmark-close {
+  background: none; border: none; color: var(--color-text-secondary);
+  cursor: pointer; padding: 2px; min-width: 28px; min-height: 28px;
+}
+.coachmark-caret { position: absolute; width: 0; height: 0; border: 7px solid transparent; }
+.coachmark[data-place="bottom"] .coachmark-caret { top: -14px; transform: translateX(-50%); border-bottom-color: var(--tour-accent); }
+.coachmark[data-place="top"]    .coachmark-caret { bottom: -14px; transform: translateX(-50%); border-top-color: var(--tour-accent); }
+.coachmark[data-place="right"]  .coachmark-caret { left: -14px; transform: translateY(-50%); border-right-color: var(--tour-accent); }
+.coachmark[data-place="left"]   .coachmark-caret { right: -14px; transform: translateY(-50%); border-left-color: var(--tour-accent); }
+.coachmark-ring {
+  position: fixed; z-index: var(--z-toast);
+  border: 2px solid rgba(161, 143, 255, 0.75);
+  box-shadow: 0 0 0 4px rgba(161, 143, 255, 0.14), 0 0 22px rgba(161, 143, 255, 0.22);
+  pointer-events: none;
+  transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease;
+}
+@keyframes coachmark-in { from { opacity: 0; transform: perspective(900px) translateY(6px); } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .coachmark { transition: none; animation: none; transform: none; }
+  .coachmark-ring { transition: none; }
+}
+
 /* ── table ───────────────────────────────────────────────────────── */
 .table-wrap { overflow: auto; border: 1px solid var(--color-border); background: rgba(255,255,255,0.02); }
 table.table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }

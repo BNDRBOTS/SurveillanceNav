@@ -26,6 +26,7 @@ export const TOURS: Record<string, TourDef> = {
     steps: [
       {
         title: 'Every point is a documented device',
+        anchor: 'map-legend',
         body: 'Colored dots are cameras, license plate readers, and other surveillance devices. Colors match the legend in the corner. Numbered circles are groups — tap one to zoom in.',
       },
       {
@@ -34,14 +35,17 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         title: 'Filters and Layers narrow the view',
+        anchor: 'map-filters',
         body: 'Use Filters for technology, status, or date range. Use Layers to toggle device types or switch to a heat view. Nearby lists everything within a distance of the map center.',
       },
       {
         title: 'Directions can route around cameras',
+        anchor: 'map-directions',
         body: 'Tap Directions, set where you are going, and compare the camera-avoiding route against the fastest one. You can send either to Google or Apple Maps with one tap.',
       },
       {
         title: 'See something we do not have?',
+        anchor: 'map-add',
         body: 'Sign in and tap Add asset, then tap the spot on the map. Only document what is visible from public space — never people, plates, or private property interiors.',
       },
     ],
@@ -58,6 +62,7 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         title: 'The builder writes the letter',
+        anchor: 'foia-new',
         body: 'Choose New request, pick the jurisdiction and what you want to know. The correct statute citation and required language are filled in automatically — edit anything you like.',
       },
       {
@@ -82,10 +87,12 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         title: 'Upload a document, get the facts out',
+        anchor: 'procurement-upload',
         body: 'Drop in a contract PDF and the parser pulls out the vendor, dollar amount, and technology. Nothing publishes automatically — a person reviews every extraction first.',
       },
       {
         title: 'Search and connect',
+        anchor: 'procurement-search',
         body: 'Search by vendor or keyword. Records link back to map assets and policies in the same jurisdiction, so a purchase order can lead you to the exact cameras it paid for.',
       },
     ],
@@ -102,6 +109,7 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         title: 'Compare jurisdictions',
+        anchor: 'policies-compare',
         body: 'Add up to four cities or counties and see their rules side by side. Useful for showing a city council what its neighbors already require.',
       },
       {
@@ -118,6 +126,7 @@ export const TOURS: Record<string, TourDef> = {
     steps: [
       {
         title: 'Pick the data, pick the format',
+        anchor: 'reports-picker',
         body: 'Choose what to export — map data, FOIA tracker, procurement, policies — and a format: CSV for spreadsheets, GeoJSON or KML for mapping tools, PDF or HTML for a finished report.',
       },
       {
@@ -142,10 +151,12 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         title: 'Invite with a link',
+        anchor: 'workspaces-create',
         body: 'Create a workspace and send invite links. Members join with their own accounts, and you control who can edit versus just read.',
       },
       {
         title: 'Switch context from the top bar',
+        anchor: 'workspace-switcher',
         body: 'The workspace switcher in the top bar changes whose shared items you see everywhere — the map, FOIA tracker, and exports all follow it.',
       },
     ],
@@ -158,10 +169,12 @@ export const TOURS: Record<string, TourDef> = {
     steps: [
       {
         title: 'Make it yours',
+        anchor: 'settings-appearance',
         body: 'High-contrast mode, reduced motion, and notification preferences live here. Changes apply instantly and stick to this device.',
       },
       {
         title: 'Your data is yours',
+        anchor: 'settings-data',
         body: 'Download everything we hold about you with one click, or delete your account — contributions are de-attributed rather than silently rewritten, so the public record stays honest.',
       },
     ],
@@ -193,6 +206,10 @@ export function useWalkthrough(key: keyof typeof TOURS): void {
       localStorage.setItem(storageKey, 'seen');
       start(tour.key, tour.steps);
     }
-    return () => end(tour.key);
-  }, [key, forced, start, end]);
+  }, [key, forced, start]);
+
+  // End-of-life is tied to leaving the page, NOT to this effect's deps: pages
+  // like the map rewrite their query string (dropping ?tour=1) moments after
+  // mount, and ending the tour on that `forced` flip killed it mid-play.
+  useEffect(() => () => end(TOURS[key]?.key ?? key), [key, end]);
 }

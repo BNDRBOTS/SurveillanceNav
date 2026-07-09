@@ -84,7 +84,7 @@ export default function ReportsPage(): JSX.Element {
         </div>
       </div>
 
-      <div className="card col" style={{ marginBottom: 'var(--space-lg)' }}>
+      <div className="card col" style={{ marginBottom: 'var(--space-lg)' }} data-tour="reports-picker">
         <div className="row-wrap" style={{ alignItems: 'flex-end' }}>
           <div style={{ minWidth: 260, flex: 1 }}>
             <Select label="What to export" value={resource} onChange={(e) => setResource(e.target.value)}>

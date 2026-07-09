@@ -76,7 +76,7 @@ export function FoiaListPage(): JSX.Element {
           <h1>FOIA tracker</h1>
           <p className="text-sm text-secondary">Public records requests with statutory deadlines, documents, and outcomes.</p>
         </div>
-        <Link to="/foia/new" className="btn btn-primary">
+        <Link to="/foia/new" className="btn btn-primary" data-tour="foia-new">
           <Icon name="plus" size={16} /> New request
         </Link>
       </div>

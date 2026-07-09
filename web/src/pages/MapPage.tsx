@@ -224,7 +224,7 @@ export default function MapPage(): JSX.Element {
         <button
           type="button"
           className={`btn btn-sm ${navOpen ? 'btn-primary' : ''}`}
-         
+          data-tour="map-directions"
           aria-expanded={navOpen}
           onClick={() => {
             setNavOpen((o) => !o);
@@ -233,7 +233,7 @@ export default function MapPage(): JSX.Element {
         >
           <Icon name="navigation" size={16} /> Directions
         </button>
-        <button type="button" className="btn btn-sm" onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
+        <button type="button" className="btn btn-sm" data-tour="map-filters" onClick={() => { setFiltersOpen((o) => !o); setNavOpen(false); }} aria-expanded={filtersOpen}>
           <Icon name="filter" size={16} /> Filters{filters.technologyType.length + filters.status.length > 0 ? ` (${filters.technologyType.length + filters.status.length})` : ''}
         </button>
         <button type="button" className="btn btn-sm" onClick={() => setLayersOpen(true)}>
@@ -251,7 +251,7 @@ export default function MapPage(): JSX.Element {
           <button
             type="button"
             className={`btn btn-sm ${addMode ? 'btn-primary' : ''}`}
-           
+            data-tour="map-add"
             onClick={() => {
               setAddMode((m) => !m);
               if (!addMode) toast('Tap the map where the asset is located.', 'info', 4000);

@@ -59,7 +59,7 @@ export default function PoliciesPage(): JSX.Element {
       <div className="row-wrap" style={{ marginBottom: 'var(--space-md)' }}>
         <input className="input" style={{ maxWidth: 300 }} type="search" placeholder="Search policy text…" aria-label="Search policies" value={search} onChange={(e) => setSearch(e.target.value)} disabled={comparing} />
         <div style={{ position: 'relative' }}>
-          <input className="input" style={{ maxWidth: 280 }} type="search" placeholder="Add jurisdiction to compare…" aria-label="Add jurisdiction to comparison" value={jurisdictionQuery} onChange={(e) => setJurisdictionQuery(e.target.value)} />
+          <input className="input" style={{ maxWidth: 280 }} type="search" placeholder="Add jurisdiction to compare…" aria-label="Add jurisdiction to comparison" data-tour="policies-compare" value={jurisdictionQuery} onChange={(e) => setJurisdictionQuery(e.target.value)} />
           {debouncedJq.length > 1 && (jurisdictionMatches?.items ?? []).length > 0 ? (
             <div className="menu" style={{ top: '100%', left: 0 }}>
               {(jurisdictionMatches?.items ?? []).slice(0, 6).map((j) => (

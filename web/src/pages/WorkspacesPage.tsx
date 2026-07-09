@@ -44,7 +44,7 @@ export function WorkspacesPage(): JSX.Element {
           <h1>Workspaces</h1>
           <p className="text-sm text-secondary">Collaborate with viewer / editor / admin roles. Access is deny-by-default across workspaces.</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+        <button type="button" className="btn btn-primary" data-tour="workspaces-create" onClick={() => setCreateOpen(true)}>
           <Icon name="plus" size={16} /> New workspace
         </button>
       </div>

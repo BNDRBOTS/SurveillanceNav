@@ -46,7 +46,7 @@ export default function ProcurementPage(): JSX.Element {
       </div>
 
       <div className="row-wrap" style={{ marginBottom: 'var(--space-md)' }}>
-        <input className="input" style={{ maxWidth: 320 }} type="search" placeholder="Search title or vendor…" aria-label="Search procurements" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="input" style={{ maxWidth: 320 }} type="search" placeholder="Search title or vendor…" aria-label="Search procurements" data-tour="procurement-search" value={search} onChange={(e) => setSearch(e.target.value)} />
         <select className="input" style={{ width: 'auto' }} aria-label="Review status" value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
           <option value="">All review states</option>
           <option value="needs_review">Needs review</option>
@@ -198,7 +198,9 @@ function ParseModal({ onClose, onParsed }: { onClose: () => void; onParsed: (id:
         </div>
       ) : (
         <div className="col">
-          <FileDrop onFile={submitFile} accept=".pdf,.txt" label="Upload an RFP / contract PDF" />
+          <div data-tour="procurement-upload">
+            <FileDrop onFile={submitFile} accept=".pdf,.txt" label="Upload an RFP / contract PDF" />
+          </div>
           <div className="row" aria-hidden="true">
             <hr className="divider" style={{ flex: 1 }} />
             <span className="text-xs text-secondary">or paste text</span>

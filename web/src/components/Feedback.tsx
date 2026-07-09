@@ -1,7 +1,8 @@
-import { Component, useEffect, type ReactNode } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
 import { useStore, type Toast } from '@/lib/store';
 import { announce } from '@/lib/announcer';
 import { Icon } from '@/components/Icon';
+import { CoachMark } from '@/components/CoachMark';
 
 /* ------------------------------- toasts ------------------------------- */
 
@@ -36,6 +37,57 @@ function ToastItem({ toast }: { toast: Toast }): JSX.Element {
 }
 
 /* --------------------------- walkthroughs ----------------------------- */
+
+/**
+ * Chooses the renderer for the active walkthrough step. On desktop, a step
+ * with an `anchor` whose `[data-tour]` target is mounted gets the floating
+ * coach-mark pointing at it; everything else (mobile, anchorless steps,
+ * missing targets) falls back to the bottom card. The target lookup retries
+ * over a few frames because tours start on page mount, often before the
+ * anchored element has rendered.
+ */
+function WalkthroughHost(): JSX.Element | null {
+  const wt = useStore((s) => s.walkthrough);
+  const anchor = wt ? wt.steps[wt.index]?.anchor : undefined;
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const [narrow, setNarrow] = useState(() => window.innerWidth <= 840);
+
+  useEffect(() => {
+    const onResize = (): void => setNarrow(window.innerWidth <= 840);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!anchor || narrow) {
+      setTarget(null);
+      return;
+    }
+    let raf = 0;
+    let tries = 0;
+    let cancelled = false;
+    const look = (): void => {
+      if (cancelled) return;
+      const el = document.querySelector<HTMLElement>(`[data-tour="${anchor}"]`);
+      if (el) {
+        setTarget(el);
+        return;
+      }
+      if (++tries < 24) raf = requestAnimationFrame(look);
+      else setTarget(null);
+    };
+    setTarget(null);
+    look();
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [anchor, narrow, wt?.key, wt?.index]);
+
+  if (!wt) return null;
+  if (anchor && !narrow && target?.isConnected) return <CoachMark wt={wt} target={target} />;
+  return <WalkthroughCard />;
+}
 
 /** Toast-styled guided tour card: step counter, Back/Next, skippable. */
 function WalkthroughCard(): JSX.Element | null {
@@ -83,7 +135,7 @@ export function Toasts(): JSX.Element {
   const toasts = useStore((s) => s.toasts);
   return (
     <div className="toasts">
-      <WalkthroughCard />
+      <WalkthroughHost />
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} />
       ))}

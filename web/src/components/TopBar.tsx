@@ -162,7 +162,7 @@ function WorkspaceSwitcher(): JSX.Element | null {
   const current = workspaces.find((w) => w.id === currentId) ?? workspaces[0]!;
 
   return (
-    <div style={{ position: 'relative' }} ref={ref} className="hide-mobile">
+    <div style={{ position: 'relative' }} ref={ref} className="hide-mobile" data-tour="workspace-switcher">
       <button type="button" className="btn btn-ghost btn-sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <span className="text-secondary text-xs">Workspace</span> {current.name.length > 18 ? `${current.name.slice(0, 17)}…` : current.name} <Icon name="chevron-down" size={14} />
       </button>

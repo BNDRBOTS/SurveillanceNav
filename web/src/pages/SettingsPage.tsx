@@ -150,7 +150,7 @@ export default function SettingsPage(): JSX.Element {
 
         <AppearanceCard contrast={contrast} setContrast={setContrast} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} />
 
-        <div className="card col">
+        <div className="card col" data-tour="settings-data">
           <h2>Your data</h2>
           <p className="text-sm text-secondary">
             Data minimization is the default: we store your email, name, consent choices, and your contributions.
@@ -230,7 +230,7 @@ function AppearanceCard({
   setReducedMotion: (r: boolean) => void;
 }): JSX.Element {
   return (
-    <div className="card col">
+    <div className="card col" data-tour="settings-appearance">
       <h2>Appearance & accessibility</h2>
       <label className="checkbox-row">
         <input type="checkbox" checked={contrast === 'high'} onChange={(e) => setContrast(e.target.checked ? 'high' : 'normal')} />

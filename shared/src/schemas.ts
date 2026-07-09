@@ -21,11 +21,15 @@ import {
  * ------------------------------------------------------------------ */
 
 const ZERO_WIDTH = /[\u200B-\u200D\uFEFF\u2060]/g;
+// C0/C1 control characters except \n and \t — these have no legitimate place
+// in user text and are a favorite obfuscation/injection vehicle.
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
 
 export const safeString = (max = 500) =>
   z
     .string()
-    .transform((s) => s.replace(ZERO_WIDTH, '').trim())
+    .transform((s) => s.replace(ZERO_WIDTH, '').replace(CONTROL_CHARS, '').trim())
     .pipe(z.string().max(max));
 
 export const nonEmptyString = (max = 500) => safeString(max).pipe(z.string().min(1, 'Required'));
@@ -114,6 +118,11 @@ export const regenerateRecoverySchema = z.object({ currentPassword: z.string().m
 /* ------------------------------------------------------------------ *
  * Users
  * ------------------------------------------------------------------ */
+
+export const acknowledgmentSchema = z.object({
+  key: z.enum(['entry', 'foia-legal']),
+  version: z.number().int().min(1),
+});
 
 export const updateMeSchema = z
   .object({
@@ -335,6 +344,8 @@ export const updateSourceSchema = createSourceSchema.partial().extend({
 export const createCommentSchema = z.object({
   workspaceId: uuid,
   body: nonEmptyString(5000),
+  /** Author saw the PII warning and chose to post anyway. */
+  confirmPii: z.boolean().optional(),
 });
 
 export const layerPresetSchema = z.object({

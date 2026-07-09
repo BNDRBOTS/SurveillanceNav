@@ -388,21 +388,32 @@ function Discussion({
   const toast = useStore((s) => s.toast);
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const [piiWarning, setPiiWarning] = useState<string[] | null>(null);
 
   if (!user || !workspaceId) {
     return <p className="text-sm text-secondary">Discussion is workspace-scoped — sign in and select a workspace.</p>;
   }
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (e: React.FormEvent | null, confirmPii = false) => {
+    e?.preventDefault();
     if (!body.trim()) return;
     setBusy(true);
     try {
-      await post(`/assets/${assetId}/comments`, { workspaceId, body: body.trim() });
+      await post(`/assets/${assetId}/comments`, {
+        workspaceId,
+        body: body.trim(),
+        ...(confirmPii ? { confirmPii: true } : {}),
+      });
       setBody('');
+      setPiiWarning(null);
       onPosted();
     } catch (err) {
-      toast((err as ApiError).message, 'error');
+      const apiErr = err as ApiError;
+      if (apiErr.code === 'pii_warning') {
+        setPiiWarning(((apiErr.details as { kinds?: string[] } | undefined)?.kinds ?? ['personal information']));
+      } else {
+        toast(apiErr.message, 'error');
+      }
     } finally {
       setBusy(false);
     }
@@ -424,15 +435,29 @@ function Discussion({
           </div>
         ))
       )}
-      <form onSubmit={submit} className="col" style={{ gap: 'var(--space-xs)' }}>
+      <form onSubmit={(e) => void submit(e)} className="col" style={{ gap: 'var(--space-xs)' }}>
         <textarea
           className="input"
           rows={2}
           placeholder="Add a comment… (@mention to notify)"
           aria-label="Comment"
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => {
+            setBody(e.target.value);
+            setPiiWarning(null);
+          }}
         />
+        {piiWarning ? (
+          <div className="banner" data-tone="warning" role="alert" style={{ flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
+            <span className="text-sm" style={{ flex: 1, minWidth: 200 }}>
+              This looks like it contains {piiWarning.join(', ').replace(/_/g, ' ')}. This platform documents
+              infrastructure, not people — edit it out, or post anyway if it belongs here.
+            </span>
+            <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => void submit(null, true)}>
+              Post anyway
+            </button>
+          </div>
+        ) : null}
         <button className="btn btn-primary btn-sm" disabled={busy || !body.trim()} style={{ alignSelf: 'flex-end' }}>
           {busy ? 'Posting…' : 'Post comment'}
         </button>

@@ -14,10 +14,11 @@ import {
 import { parseOrThrow, paginate, safeSort } from '../lib/validation.js';
 import { query, queryOne, withTransaction, isDbHealthy } from '../db/pool.js';
 import { requireAuth, requireRole, workspaceRole } from '../plugins/auth.js';
-import { badRequest, notFound, serviceUnavailable, payloadTooLarge } from '../lib/errors.js';
+import { badRequest, notFound, serviceUnavailable, payloadTooLarge, conflict } from '../lib/errors.js';
 import { audit } from '../services/audit.js';
 import { recalcAssetConfidence } from '../services/confidence.js';
-import { scanUpload } from '../services/scanner.js';
+import { scanUpload, detectPii } from '../services/scanner.js';
+import { assertRouteLimit } from '../lib/routeLimit.js';
 import { storage, evidenceKey, quarantineKey } from '../storage/index.js';
 import { cache, cachedJson } from '../cache/index.js';
 import { enqueueJob } from '../jobs/queue.js';
@@ -579,7 +580,8 @@ export function registerAssetRoutes(app: FastifyInstance): void {
       [id, req.user!.id, body.reason],
     );
     await snapshotHistory(id, req.user!.id, 'flag', null);
-    await audit({ actorId: req.user!.id, action: 'asset.flagged', resource: 'asset', resourceId: id, ip: req.ip });
+    const flagPii = detectPii(body.reason);
+    await audit({ actorId: req.user!.id, action: 'asset.flagged', resource: 'asset', resourceId: id, ...(flagPii.length ? { metadata: { piiKinds: flagPii } } : {}), ip: req.ip });
     return reply.status(201).send({ ok: true, flagId: flag!.id, message: 'Thanks — a curator will review this flag.' });
   });
 
@@ -596,13 +598,17 @@ export function registerAssetRoutes(app: FastifyInstance): void {
     );
     await snapshotHistory(id, req.user!.id, 'dispute', null);
     await recalcAssetConfidence(id);
-    // notify admins
+    // notify admins — include any PII the reporter typed so curators redact early
+    const disputePii = detectPii(`${body.reason}\n${body.evidence}`);
     await query(
       `INSERT INTO notifications (user_id, kind, title, body, link)
        SELECT id, 'dispute_opened', 'New data dispute', $1, $2 FROM users WHERE role = 'admin' AND status = 'active'`,
-      [`Dispute opened: ${body.reason.slice(0, 120)}`, `/admin/curation`],
+      [
+        `Dispute opened: ${body.reason.slice(0, 120)}${disputePii.length ? ` — contains possible PII (${disputePii.join(', ')})` : ''}`,
+        `/admin/curation`,
+      ],
     );
-    await audit({ actorId: req.user!.id, action: 'asset.disputed', resource: 'asset', resourceId: id, ip: req.ip });
+    await audit({ actorId: req.user!.id, action: 'asset.disputed', resource: 'asset', resourceId: id, ...(disputePii.length ? { metadata: { piiKinds: disputePii } } : {}), ip: req.ip });
     await cache.del('assets:', true);
     return reply.status(201).send({
       ok: true,
@@ -705,6 +711,32 @@ export function registerAssetRoutes(app: FastifyInstance): void {
     const exists = await queryOne(`SELECT 1 FROM surveillance_assets WHERE id = $1 AND deleted_at IS NULL`, [id]);
     if (!exists) throw notFound('Asset');
 
+    await assertRouteLimit(`comment:${req.user!.id}`, 10, 300);
+
+    // Exact-duplicate suppression: double-submits and copy-paste storms.
+    const dup = await queryOne(
+      `SELECT 1 FROM comments
+       WHERE user_id = $1 AND asset_id = $2 AND workspace_id = $3 AND body = $4
+         AND deleted_at IS NULL AND created_at > now() - interval '10 minutes'`,
+      [req.user!.id, id, body.workspaceId, body.body],
+    );
+    if (dup) throw conflict('You already posted exactly this comment here.');
+
+    // Text-borne PII: warn the author first; store detected kinds if they
+    // confirm, so curators can review text the same way they review files.
+    // @mentions are collaboration directives, not leaked PII — blank them
+    // (same token grammar as the resolver below) before scanning.
+    const piiKinds = detectPii(body.body.replace(/@([\w.+-]+@[\w.-]+|[A-Za-z][\w]*(?:\s[A-Z][\w]*)?)/g, ''));
+    if (piiKinds.length > 0 && !body.confirmPii) {
+      return reply.status(422).send({
+        error: {
+          code: 'pii_warning',
+          message: 'This comment looks like it contains personal information. Edit it, or confirm posting as-is.',
+          details: { kinds: piiKinds },
+        },
+      });
+    }
+
     // Resolve @mentions ("@Full Name" or @email) to workspace members.
     const mentionTokens = body.body.match(/@([\w.+-]+@[\w.-]+|[A-Za-z][\w]*(?:\s[A-Z][\w]*)?)/g) ?? [];
     const mentioned: string[] = [];
@@ -719,9 +751,9 @@ export function registerAssetRoutes(app: FastifyInstance): void {
     }
 
     const comment = await queryOne<{ id: string }>(
-      `INSERT INTO comments (workspace_id, asset_id, user_id, body, mentions)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [body.workspaceId, id, req.user!.id, body.body, mentioned],
+      `INSERT INTO comments (workspace_id, asset_id, user_id, body, mentions, pii_kinds)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [body.workspaceId, id, req.user!.id, body.body, mentioned, piiKinds],
     );
     for (const userId of mentioned) {
       if (userId === req.user!.id) continue;

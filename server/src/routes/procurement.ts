@@ -13,6 +13,7 @@ import { badRequest, notFound, payloadTooLarge } from '../lib/errors.js';
 import { audit } from '../services/audit.js';
 import { storage } from '../storage/index.js';
 import { enqueueJob } from '../jobs/queue.js';
+import { detectPii } from '../services/scanner.js';
 import { scanUpload } from '../services/scanner.js';
 
 const PROC_SELECT = `
@@ -80,9 +81,13 @@ export function registerProcurementRoutes(app: FastifyInstance): void {
        VALUES ($1, $2, $3, $4, 'needs_review') RETURNING id`,
       [jurisdictionId, title, rawFileKey, req.user!.id],
     );
+    // Pasted contract text legitimately contains contact info — never block,
+    // but surface detected kinds into the human-review pass.
+    const pastePii = text ? detectPii(text) : [];
     const jobId = await enqueueJob('parse_procurement', {
       procurementId: proc!.id,
       ...(text ? { text } : {}),
+      ...(pastePii.length ? { piiKinds: pastePii } : {}),
     });
     await audit({ actorId: req.user!.id, action: 'procurement.parse_started', resource: 'procurement', resourceId: proc!.id, ip: req.ip });
     return reply.status(202).send({

@@ -507,6 +507,10 @@ const parseProcurementJob: JobHandler = async (payload) => {
         dateEvidence: result.dateEvidence,
         fieldConfidence: result.fieldConfidence,
         warnings: result.warnings,
+        // PII detected in the submitted text — reviewers see it before approval
+        ...(Array.isArray(payload.piiKinds) && (payload.piiKinds as string[]).length > 0
+          ? { piiKinds: payload.piiKinds }
+          : {}),
       }),
     ],
   );
